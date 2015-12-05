@@ -27,33 +27,20 @@ namespace GooglePhotoOrganizer
         PicasaService _picasaService = null;
 
 
-        public PicasaService GetPicasaService()
+        public PicasaService GetPicasaService(bool recreate = false)
         {
+            if (recreate)
+            {
+                //Recreate service
+                _picasaService = null;
+                //Get google drive about to sync autorization
+                //Because unknown problems in picasa autorization
+                var drive = new GoogleDriveClient();
+                drive.GetAbout();
+            }
+
             if (_picasaService == null)
             {
-                /*
-                const string ServiceAccountEmail = "account-1@praxis-magnet-114019.iam.gserviceaccount.com";
-                var certificate = new X509Certificate2(@"key.p12", "notasecret", X509KeyStorageFlags.Exportable);
-                var serviceAccountCredentialInitializer =
-                new ServiceAccountCredential.Initializer(ServiceAccountEmail)
-                {
-                    Scopes = new[] { "https://picasaweb.google.com/data/" }
-                }.FromCertificate(certificate);
-                var credential = new ServiceAccountCredential(serviceAccountCredentialInitializer);
-                if (!credential.RequestAccessTokenAsync(System.Threading.CancellationToken.None).Result)
-                   throw new InvalidOperationException("Access token request failed.");
-
-
-                var requestFactory = new GDataRequestFactory(null);
-                requestFactory.CustomHeaders.Add("Authorization: Bearer " + credential.Token.AccessToken);
-                requestFactory.CustomHeaders.Add("Gdata-version: 2");
-                PicasaService service = new PicasaService("api-project");
-                service.RequestFactory = requestFactory;
- 
-                PhotoQuery query = new PhotoQuery(PicasaQuery.CreatePicasaUri(_IdUsuari, _albumid));
-                PicasaFeed feed = service.Query(query);*/
-
-
                 var creditals = GoogleDriveClient.GetCreditals();
 
                 var requestFactory = new GDataRequestFactory(null);
@@ -64,6 +51,8 @@ namespace GooglePhotoOrganizer
             }
             return _picasaService;
         }
+
+
 
 
 
@@ -86,9 +75,21 @@ namespace GooglePhotoOrganizer
             }
 
             query.NumberToRetrieve = 100;
-            
-            PicasaFeed feed = service.Query(query);
-            
+
+
+
+            PicasaFeed feed;
+            try
+            {
+                feed = service.Query(query);
+            }
+            catch
+            {
+                //If a first error. Try recreate service 
+                service = GetPicasaService(true);
+                feed = service.Query(query);
+            }
+                        
             var result = new List<PicasaEntry>();
             while (feed.Entries!=null)
             {
@@ -109,7 +110,16 @@ namespace GooglePhotoOrganizer
                     default:
                         throw new NotImplementedException("Unknown kind");
                 }
-                feed = service.Query(query);
+                try
+                {
+                    feed = service.Query(query);
+                }
+                catch
+                {
+                    //If a first error. Try recreate service 
+                    service = GetPicasaService(true);
+                    feed = service.Query(query);
+                }
             }
             return result;
        }
@@ -166,7 +176,17 @@ namespace GooglePhotoOrganizer
 
             Uri feedUri = new Uri(PicasaQuery.CreatePicasaUri("default"));
 
-            PicasaEntry createdEntry = (PicasaEntry)service.Insert(feedUri, newEntry);
+            PicasaEntry createdEntry;
+            try
+            {
+                createdEntry = (PicasaEntry)service.Insert(feedUri, newEntry);
+            }
+            catch
+            {
+                //If a first error. Try recreate service 
+                service = GetPicasaService(true);
+                createdEntry = (PicasaEntry)service.Insert(feedUri, newEntry);
+            }
             return new AlbumAccessor(createdEntry); 
         }
         
@@ -181,7 +201,7 @@ namespace GooglePhotoOrganizer
         }
         
 
-        public void UploadPhoto(string filePath, string albumId = "default")
+        public PicasaEntry UploadPhoto(string filePath, string albumId = "default")
         {
             var service = GetPicasaService();
             Uri postUri = new Uri(PicasaQuery.CreatePicasaUri("default", albumId));
@@ -190,17 +210,23 @@ namespace GooglePhotoOrganizer
             System.IO.FileInfo fileInfo = new System.IO.FileInfo(filePath);
             System.IO.FileStream fileStream = fileInfo.OpenRead();
 
-            PicasaEntry entry = (PicasaEntry)service.Insert(postUri, fileStream, "image/jpeg", filePath);
-
-            //fullRes
-            ///resumable/upload/plus/v1whitelisted/mediasets/me.cinstant/mediaBackground?uploadType=resumable&imageSize=1024&mediaType=photo&storage=**full**&remainingMediaCount=111
-
-            //new Uri("https://picasaweb.google.com/data/feed/api/user/default/albumid/default");
+            PicasaEntry entry;
+            try
+            { 
+                entry = (PicasaEntry)service.Insert(postUri, fileStream, "image/jpeg", filePath);
+            }
+            catch
+            {
+                //If a first error. Try recreate service 
+                service = GetPicasaService(true);
+                entry = (PicasaEntry)service.Insert(postUri, fileStream, "image/jpeg", filePath);
+            }
             
-            fileStream.Close();  
+            fileStream.Close();
+            return entry; 
         }
 
-
+        /*
         public PicasaEntry GetItemById(string id)
         {
             PicasaEntry e = new PicasaEntry();
@@ -208,7 +234,6 @@ namespace GooglePhotoOrganizer
             
             return (PicasaEntry)e.Update();
         }
-
 
         public void UploadPhoto2(string filePath, string albumId = "default")
         {
@@ -227,7 +252,7 @@ namespace GooglePhotoOrganizer
             //new Uri("https://picasaweb.google.com/data/feed/api/user/default/albumid/default");
 
             fileStream.Close();
-        }
+        }*/
 
 
     }

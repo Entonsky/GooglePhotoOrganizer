@@ -221,7 +221,7 @@ namespace GooglePhotoOrganizer
                 {
                     string exifDate = "";
                     if (useDateTag)
-                        exifDate = ImageWorker.GetExifDateInGoogleFormat(((FileDesc)file).path);
+                        exifDate = MediaKeyExtractor.GetMetadataKey(((FileDesc)file).path);
                     return exifDate;
                 });
                 
@@ -230,10 +230,7 @@ namespace GooglePhotoOrganizer
                 {
                     string exifDate = "";
                     if (useDateTag)
-                    {
-                        if (((File)file).ImageMediaMetadata!=null && ((File)file).ImageMediaMetadata!=null)
-                            exifDate = ((File)file).ImageMediaMetadata.Date;
-                    }
+                        exifDate = MediaKeyExtractor.GetMetadataKey((File)file);
                     return exifDate;
                 });
 
@@ -245,19 +242,7 @@ namespace GooglePhotoOrganizer
                     {
                         string exifDate = "";
                         if (useDateTag)
-                        {
-                            if (((PicasaEntry)file).Exif != null && ((PicasaEntry)file).Exif.Time != null)
-                            {
-                                var timeStr = ((PicasaEntry)file).Exif.Time.Value;
-                                long value;
-                                if (Int64.TryParse(timeStr, out value))
-                                {
-                                    var time = new DateTime(1970, 1, 1, 0, 0, 0);
-                                    time = time.AddMilliseconds(value);
-                                    exifDate = ImageWorker.ExifDateToGoogleFormat(time.ToString());
-                                }
-                            }
-                        }
+                            exifDate = MediaKeyExtractor.GetMetadataKey((PicasaEntry)file, exifGoogle);
                         return exifDate;
                     });
                 }
@@ -292,7 +277,7 @@ namespace GooglePhotoOrganizer
                             googleDirId = googleDirs[localFile.relPath];
                         else
                         {
-                            googleDirId = drive.CreateCascadeDirectory(localFile.relPath).Id;
+                            googleDirId = drive.CreateCascadeDirectory(localFile.relPath, drivePhotoDirId).Id;
                             googleDirs.Add(localFile.relPath, googleDirId);
                         }
                         

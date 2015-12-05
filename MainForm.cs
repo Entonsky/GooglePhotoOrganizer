@@ -184,9 +184,6 @@ namespace GooglePhotoOrganizer
         }
         
                 
-                
-       
-        
         
         private void buttonUpload_Click(object sender, EventArgs e)
         {
@@ -243,11 +240,7 @@ namespace GooglePhotoOrganizer
                 visible = false;
 
             doNotMakeAlbumWithFolderNameToolStripMenuItem.Visible = visible;
-            
-            makeAlbumWithFolderNameToolStripMenuItem.Visible = !visible;
-
-
-
+            makeAlbumWithFolderNameToolStripMenuItem.Visible = !visible;            
             doNotMakeAlbumsWithSubFolderNamesToolStripMenuItem.Visible = treeViewDirectories.SelectedNode.Nodes.Count>0;
             makeAlbumsWithSubfolderNamesToolStripMenuItem.Visible = treeViewDirectories.SelectedNode.Nodes.Count > 0;
         }
