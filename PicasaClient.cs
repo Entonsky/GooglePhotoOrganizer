@@ -197,7 +197,16 @@ namespace GooglePhotoOrganizer
             var a = DateTime.Now.AddYears(-1);
             ac.Timestamp = (ulong)a.Ticks;
 
-            PicasaEntry updatedEntry = (PicasaEntry)photo.Update();
+            try
+            {
+                PicasaEntry updatedEntry = (PicasaEntry)photo.Update();
+            }
+            catch
+            {
+                var service = GetPicasaService(true);
+                photo.Service = service;
+                PicasaEntry updatedEntry = (PicasaEntry)photo.Update();
+            }
         }
         
 

@@ -155,6 +155,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FileWorker.cs" />
+    <Compile Include="FolderSelectorForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FolderSelectorForm.Designer.cs">
+      <DependentUpon>FolderSelectorForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="GetGooglePhotosFolder.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -174,6 +180,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Synchronizer.cs" />
     <Compile Include="TreeSaver.cs" />
+    <EmbeddedResource Include="FolderSelectorForm.resx">
+      <DependentUpon>FolderSelectorForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="GetGooglePhotosFolder.resx">
       <DependentUpon>GetGooglePhotosFolder.cs</DependentUpon>
     </EmbeddedResource>

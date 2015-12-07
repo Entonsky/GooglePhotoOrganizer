@@ -42,7 +42,7 @@ namespace GooglePhotoOrganizer
             }
         }
 
-        
+
         private bool RunAction(ThreadStart act)
         {
             labelTimer.Text = "0 sec";
@@ -51,7 +51,7 @@ namespace GooglePhotoOrganizer
             Application.DoEvents();
             active = true;
             Exception lastEx = null;
-            
+
             var th = new Thread(() =>
             {
                 try
@@ -72,8 +72,13 @@ namespace GooglePhotoOrganizer
                     break;
             }
 
+
             if (lastEx != null)
+            {
+                SetEnabled(true);
                 throw lastEx;
+            }
+
 
             if (!active)
                 th.Abort();
@@ -87,7 +92,6 @@ namespace GooglePhotoOrganizer
             }
             else
                 return false;
-
         }
         
                                 
