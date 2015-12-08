@@ -168,7 +168,7 @@
       <DependentUpon>GetGooglePhotosFolder.cs</DependentUpon>
     </Compile>
     <Compile Include="GoogleDriveClient.cs" />
-    <Compile Include="MediaKeyExtractor.cs" />
+    <Compile Include="MediaKeyMatcher.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>

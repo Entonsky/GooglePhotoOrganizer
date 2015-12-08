@@ -12,6 +12,22 @@ using System.Windows.Forms;
 
 namespace GooglePhotoOrganizer
 {
+
+    class FileDesc
+    {
+        public string path;
+        public string relPath;
+        public string album;
+
+        public FileDesc(string path, string relPath, string album)
+        {
+            this.path = path;
+            this.relPath = relPath;
+            this.album = album;
+        }
+    }
+
+
     class Synchronizer
     {
 
@@ -43,37 +59,7 @@ namespace GooglePhotoOrganizer
             _progressBar.Invoke(action);
         }
 
-        delegate string ExtractKeyDelegate(object item);
-        Dictionary<string, List<object>> MakeKeyDict(IEnumerable<object> list, ExtractKeyDelegate KeyExtractor)
-        {
-            var result = new Dictionary<string, List<object>>();
-            foreach (var item in list)
-            {
-                var key = KeyExtractor(item);
-                if (key == null)
-                    key = "";
-                if (!result.ContainsKey(key))
-                    result.Add(key, new List<object>());
-                result[key].Add(item);
-            }
-            return result;
-        }
-
-        class FileDesc
-        {
-            public string path;
-            public string relPath;
-            public string album;
-
-            public FileDesc(string path, string relPath, string album)
-            {
-                this.path = path;
-                this.relPath = relPath;
-                this.album = album;
-            }
-        }
-
-        
+       
         Dictionary<string, List<FileDesc>> GetFilesFromNodes(string pathRoot, List<TreeNode> nodes)
         {
             var result = new Dictionary<string, List<FileDesc>>();
@@ -144,7 +130,7 @@ namespace GooglePhotoOrganizer
 
         Dictionary<string, List<FileDesc>> localFiles = null;
 
-        Dictionary<string, List<object>> googleFiles = null;
+        Dictionary<string, List<File>> googleFiles = null;
         Dictionary<string, string> googleDirs = null;
 
         Dictionary<string, List<PicasaEntry>> picasaFiles = null;
@@ -152,7 +138,7 @@ namespace GooglePhotoOrganizer
         Dictionary<string, AlbumAccessor> picasaAlbumsByName = null;
         Dictionary<string, Tuple<string, string>> preferableDirs = new Dictionary<string, Tuple<string, string>>();
         
-        private string MakePrefDirKey(List<object> fileDescs)
+        private string MakePrefDirKey(List<FileDesc> fileDescs)
         {
             var result = new StringBuilder();
             fileDescs.Sort((x, y) => ((FileDesc)x).path.CompareTo(((FileDesc)y).path));
@@ -188,45 +174,43 @@ namespace GooglePhotoOrganizer
                 }
             }
 
-            //Has fileName matching
-            //Seek for exif data matching
-            var exifLocal = MakeKeyDict(localFiles[fileName],
-            (object file) =>
-            {
-                return MediaKeyExtractor.GetMetadataKey(((FileDesc)file).path);
-            });
-
-            var exifGoogle = MakeKeyDict(googleFiles[fileName],
-            (object file) =>
-            {
-                return MediaKeyExtractor.GetMetadataKey((File)file);
-            });
-
-            Dictionary<string, List<object>> exifPicasa = new Dictionary<string, List<object>>();
-            if (picasaFiles.ContainsKey(fileName))
-            {
-                exifPicasa = MakeKeyDict(picasaFiles[fileName],
-                (object file) =>
-                {
-                    return MediaKeyExtractor.GetMetadataKey((PicasaEntry)file, exifGoogle);
-                });
-            }
-
+            //Match file by Data
+            var matchedFiles = MediaKeyMatcher.MatchFilesWithTheSameName(localFiles[fileName], googleFiles[fileName], picasaFiles[fileName]);
             
-            foreach (var exifListPair in exifLocal)
+            
+            foreach (var matched in matchedFiles)
             {
-                //No such files on google photos
-                if (!exifGoogle.ContainsKey(exifListPair.Key) && !exifPicasa.ContainsKey(exifListPair.Key))
+                //No such files on google storage
+                if (matched.googleFiles.Count==0 && matched.picasaFiles.Count == 0)
                     continue;
 
-                if (exifListPair.Value.Count == 0)
+                //No such file on local storage
+                if (matched.localFiles.Count == 0)
                     continue;
 
+
+                //*****************************************
+                //Select local file to get folder structure
                 FileDesc localFile;
-                if (exifListPair.Value.Count > 1)
+                if (matched.localFiles.Count > 1)
                 {
+                    var localFilesSizes = new HashSet<long>();
+                    //Get local files size
+                    foreach (var file in matched.localFiles)
+                        localFilesSizes.Add(MediaKeyMatcher.GetFileSize(file.path));
+
+                    if (localFilesSizes.Count>1)
+                    {
+                        //Can't distinguish this files
+                        LogText("Different local files with the same name. Skipping tham:");
+                        foreach (FileDesc file in matched.localFiles)
+                            LogText("   " + file.path);
+                        continue;
+                    }
+
+                    //Files are really the same
                     //Many folders exists
-                    var key = MakePrefDirKey(exifListPair.Value);
+                    var key = MakePrefDirKey(matched.localFiles);
                     lock (preferableDirs)
                     {
                         if (preferableDirs.ContainsKey(key))
@@ -236,9 +220,8 @@ namespace GooglePhotoOrganizer
                             //Select pref dir
                             if (sel!=null)
                             {
-                                foreach (var item in exifListPair.Value)
+                                foreach (var fileDesc in matched.localFiles)
                                 {
-                                    var fileDesc = (FileDesc)item;
                                     if (fileDesc.relPath == sel.Item1 && fileDesc.album == sel.Item2)
                                     {
                                         localFile = fileDesc;
@@ -249,9 +232,9 @@ namespace GooglePhotoOrganizer
 
                             if (localFile == null)
                             {
-                                foreach (FileDesc file in exifListPair.Value)
-                                    LogText("   " + file.path);
                                 LogText("The same files in different folders. Skipping tham:");
+                                foreach (FileDesc file in matched.localFiles)
+                                    LogText("   " + file.path);
                                 continue;
                             }                            
                         }
@@ -262,8 +245,8 @@ namespace GooglePhotoOrganizer
                             int index = -1;
                             bool chooseAlways = false;
                             var folders = new List<string>();
-                            for (int i = 0; i < exifListPair.Value.Count; i++)
-                                folders.Add(((FileDesc)exifListPair.Value[i]).path);
+                            for (int i = 0; i < matched.localFiles.Count; i++)
+                                folders.Add(matched.localFiles[i].path);
 
                             Action act = () =>
                             {
@@ -272,7 +255,7 @@ namespace GooglePhotoOrganizer
                             _progressBar.Invoke(act);
                             if (dialogResult == DialogResult.OK && index >= 0)
                             {
-                                localFile = (FileDesc)exifListPair.Value[index];
+                                localFile = matched.localFiles[index];
                                 if (chooseAlways)
                                     preferableDirs.Add(key, new Tuple<string, string>(localFile.relPath, localFile.album));
                             }
@@ -281,9 +264,9 @@ namespace GooglePhotoOrganizer
                                 if (chooseAlways)
                                     preferableDirs.Add(key, null);
 
-                                foreach (FileDesc file in exifListPair.Value)
-                                    LogText("   " + file.path);
                                 LogText("The same files in different folders. Skipping tham:");
+                                foreach (FileDesc file in matched.localFiles)
+                                    LogText("   " + file.path);
                                 continue;
                             }
                         }
@@ -291,13 +274,14 @@ namespace GooglePhotoOrganizer
                 }
                 else
                 {
-                    //One folder only
-                    localFile = (FileDesc)exifListPair.Value[0];
+                    //One file
+                    localFile = matched.localFiles[0];
                 }
+                //*****************************************
 
 
                 //Move files to picasa album
-                if (exifPicasa.ContainsKey(exifListPair.Key) && exifPicasa[exifListPair.Key].Count != 0)
+                if (matched.picasaFiles.Count > 0)
                 {
                     AlbumAccessor picasaAlbum;
                     lock (picasaAlbumsByName)
@@ -311,13 +295,13 @@ namespace GooglePhotoOrganizer
                         }
                     }
 
-                    if (exifPicasa[exifListPair.Key].Count > 1)
+                    if (matched.picasaFiles.Count > 1)
                     {
-                        var photo = new PhotoAccessor((PicasaEntry)exifPicasa[exifListPair.Key][0]);
-                        LogText("Has " + exifPicasa[exifListPair.Key].Count + " dublicates with name '" + photo.PhotoTitle + "' among the Google Photo files. All of them will move to album '" + localFile.album + "'");
+                        var photo = new PhotoAccessor(matched.picasaFiles[0]);
+                        LogText("Has " + matched.picasaFiles.Count + " dublicates with name '" + photo.PhotoTitle + "' among the Google Photo files. All of them will move to album '" + localFile.album + "'");
                     }
 
-                    foreach (PicasaEntry picasaFile in exifPicasa[exifListPair.Key])
+                    foreach (PicasaEntry picasaFile in matched.picasaFiles)
                     {
                         var photo = new PhotoAccessor(picasaFile);
                         if (photo.AlbumId != picasaAlbum.Id) //Not in that album yet
@@ -326,7 +310,7 @@ namespace GooglePhotoOrganizer
                 }
 
                 //Move files to google dirs
-                if (exifGoogle.ContainsKey(exifListPair.Key) && exifGoogle[exifListPair.Key].Count != 0)
+                if (matched.googleFiles.Count != 0)
                 {
                     string googleDirId;
                     lock (googleDirs)
@@ -340,10 +324,10 @@ namespace GooglePhotoOrganizer
                         }
                     }
 
-                    if (exifGoogle[exifListPair.Key].Count > 1)
-                        LogText("Has " + exifGoogle[exifListPair.Key].Count + " dublicates with name '" + ((File)exifGoogle[exifListPair.Key][0]).OriginalFilename + "' among the google files. All of them will move to '" + localFile.relPath + "'");
+                    if (matched.googleFiles.Count > 1)
+                        LogText("Has " + matched.googleFiles.Count + " dublicates with name '" + matched.googleFiles[0].OriginalFilename + "' among the google files. All of them will move to '" + localFile.relPath + "'");
 
-                    foreach (File googleFile in exifGoogle[exifListPair.Key])
+                    foreach (File googleFile in matched.googleFiles)
                     {
                         bool hasSameParent = false;
                         foreach (var parent in googleFile.Parents)
@@ -357,11 +341,15 @@ namespace GooglePhotoOrganizer
                         if (!hasSameParent) //If not already in this folder
                             drive.MoveFileToDirectory(googleFile.Id, googleDirId);
 
-                        if (String.IsNullOrWhiteSpace(exifListPair.Key))
+                        
+                        if (googleFile.ImageMediaMetadata == null || String.IsNullOrWhiteSpace(googleFile.ImageMediaMetadata.Date))
                         {
                             //No Exif date for file.
-                            //Will change google CreationDate
+                            //Will change google CreationDate if its bigger then fileDate
                             var creationDate = System.IO.File.GetCreationTime(localFile.path);
+                            var fi = new System.IO.FileInfo(localFile.path);
+                            if (creationDate > fi.LastWriteTime) //Get min among creation and modified date
+                                creationDate = fi.LastWriteTime;
                             if (googleFile.CreatedDate > creationDate)
                                 drive.SetCreationDate(googleFile.Id, creationDate);
                         }
@@ -398,8 +386,13 @@ namespace GooglePhotoOrganizer
 
             LogText("Search for files already in Google Photos directory on Google Drive. It can take a long time...");
             var googleFilesLst = drive.GetFiles(null, drivePhotoDirId);
-            googleFiles = MakeKeyDict(googleFilesLst,
-                (object file) => { return ((File)file).OriginalFilename; });
+            googleFiles = new Dictionary<string, List<File>>();
+            foreach (var file in googleFilesLst)
+            {
+                if (!googleFiles.ContainsKey(file.OriginalFilename))
+                    googleFiles.Add(file.OriginalFilename, new List<File>());
+                googleFiles[file.OriginalFilename].Add(file);
+            }
             if (googleFilesLst.Count == 0)
             {
                 LogText("No files found");
@@ -429,7 +422,7 @@ namespace GooglePhotoOrganizer
             ResetProgress(googleFiles.Count);
             bool hasError = false;
 
-            var opt = new ParallelOptions() { MaxDegreeOfParallelism = 4 };
+            var opt = new ParallelOptions() { MaxDegreeOfParallelism = 1 };
             //foreach (var googleFilePair in googleFiles)
             Parallel.ForEach(googleFiles, opt, (googleFilePair) =>
             {

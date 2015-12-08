@@ -304,6 +304,11 @@ namespace GooglePhotoOrganizer
                 ChangeColorRecursive(child, newColor);
             }
         }
+
+        private void button1_Click_2(object sender, EventArgs e)
+        {
+            MediaKeyMatcher.GetExifImageDateOrMovieLength(@"F:\FOTO\ANN\2010-04-20ДР Ромадиной\DSC00562.JPG");
+        }
     }
     
 }

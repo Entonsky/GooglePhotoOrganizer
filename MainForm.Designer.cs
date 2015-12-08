@@ -44,6 +44,7 @@
             this.buttonOrganize = new System.Windows.Forms.Button();
             this.buttonCancel = new System.Windows.Forms.Button();
             this.labelTimer = new System.Windows.Forms.Label();
+            this.button1 = new System.Windows.Forms.Button();
             this.contextMenuStripTree.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -185,11 +186,22 @@
             this.labelTimer.Size = new System.Drawing.Size(0, 13);
             this.labelTimer.TabIndex = 11;
             // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(247, 364);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.TabIndex = 12;
+            this.button1.Text = "button1";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click_2);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(470, 519);
+            this.Controls.Add(this.button1);
             this.Controls.Add(this.labelTimer);
             this.Controls.Add(this.buttonCancel);
             this.Controls.Add(this.buttonOrganize);
@@ -225,6 +237,7 @@
         private System.Windows.Forms.ToolStripMenuItem makeAlbumWithFolderNameToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem doNotMakeAlbumsWithSubFolderNamesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem makeAlbumsWithSubfolderNamesToolStripMenuItem;
+        private System.Windows.Forms.Button button1;
     }
 }
 
