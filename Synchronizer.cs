@@ -174,8 +174,25 @@ namespace GooglePhotoOrganizer
                 }
             }
 
+            if (localFiles.ContainsKey(fileName))
+                return;
+
+            List<File> googleFilesSelect;
+            if (googleFiles.ContainsKey(fileName))
+                googleFilesSelect = googleFiles[fileName];
+            else
+                googleFilesSelect = new List<File>();
+
+            List<PicasaEntry> picasaFilesSelect;
+            if (picasaFiles.ContainsKey(fileName))
+                picasaFilesSelect = picasaFiles[fileName];
+            else
+                picasaFilesSelect = new List<PicasaEntry>();
+
+
+
             //Match file by Data
-            var matchedFiles = MediaKeyMatcher.MatchFilesWithTheSameName(localFiles[fileName], googleFiles[fileName], picasaFiles[fileName]);
+            var matchedFiles = MediaKeyMatcher.MatchFilesWithTheSameName(localFiles[fileName], googleFilesSelect, picasaFilesSelect);
             
             
             foreach (var matched in matchedFiles)
@@ -422,7 +439,7 @@ namespace GooglePhotoOrganizer
             ResetProgress(googleFiles.Count);
             bool hasError = false;
 
-            var opt = new ParallelOptions() { MaxDegreeOfParallelism = 1 };
+            var opt = new ParallelOptions() { MaxDegreeOfParallelism = 5 };
             //foreach (var googleFilePair in googleFiles)
             Parallel.ForEach(googleFiles, opt, (googleFilePair) =>
             {
