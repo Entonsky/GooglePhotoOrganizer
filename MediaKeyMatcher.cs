@@ -5,6 +5,7 @@ using System.Windows.Media.Imaging;
 using Microsoft.WindowsAPICodePack.Shell;
 using Google.GData.Photos;
 using Google.Apis.Drive.v2.Data;
+using System.Drawing.Imaging;
 
 namespace GooglePhotoOrganizer
 {
@@ -256,16 +257,7 @@ namespace GooglePhotoOrganizer
             }
         }
 
-
-
-        public static string ExifDateToGoogleFormat(string date)
-        {
-            DateTime dateParsed;
-            if (DateTime.TryParse(date, out dateParsed))
-                date = dateParsed.ToString("yyyy:MM:dd HH:mm:ss");
-            return date;
-        }
-
+        
         public static long GetFileSize(string filePath)
         {
             lock (_diskReadLock)
@@ -276,6 +268,10 @@ namespace GooglePhotoOrganizer
         }
 
 
+
+
+
+
         static object _diskReadLock = new Object();
 
         //Keydata for file
@@ -283,25 +279,38 @@ namespace GooglePhotoOrganizer
         {
             lock (_diskReadLock)
             {
-                var fs = new System.IO.FileStream(filePath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read);
-                if (IsImage(fs))
+                using (var fs = new System.IO.FileStream(filePath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                 {
-                    try
+                    if (IsImage(fs))
                     {
-                        BitmapSource img = BitmapFrame.Create(fs);
-                        BitmapMetadata md = (BitmapMetadata)img.Metadata;
-                        string date = md.DateTaken;
-                        if (!String.IsNullOrWhiteSpace(date))
-                            return date;
-                        //null date. Try width and height
-                        if (img.Width != 0 && img.Height != 0) //Google usually transforms images more the 4000 pixels
-                            return img.Width.ToString() + "&&" + img.Height.ToString();
-                        return null;
+                        try
+                        {
+                            BitmapSource img = BitmapFrame.Create(fs);
+                            BitmapMetadata md = (BitmapMetadata)img.Metadata;
+                            string dateStr = md.DateTaken;
+                            DateTime dateResult;
+                            if (!String.IsNullOrWhiteSpace(dateStr)&& DateTime.TryParse(dateStr, out dateResult))
+                            {
+                                fs.Close();
+                                return dateResult;
+                            }
+                            //null date. Try width and height
+                            if (img.Width != 0 && img.Height != 0) //Google usually transforms images more the 4000 pixels
+                            {
+                                fs.Close();
+                                return img.Width.ToString() + "&&" + img.Height.ToString();
+                            }
+                            fs.Close();
+                            return null;
+                        }
+                        catch
+                        {
+                            fs.Close();
+                            return null;
+                        }
                     }
-                    catch
-                    {
-                        return null;
-                    }
+                    else
+                        fs.Close();
                 }
 
                 try
@@ -315,6 +324,43 @@ namespace GooglePhotoOrganizer
                 }
             }
         }
+
+
+        public static DateTime? ExifDateToDateTime(string date)
+        {
+            var sp = date.Split(':');
+            if (sp.Length == 5)
+            {
+                string dateStr = sp[0] + "-" + sp[1] + "-" + sp[2] + ":" + sp[3] + ":" + sp[4];
+                return DateTime.Parse(dateStr);
+            }
+
+            DateTime dateParsed;
+            if (DateTime.TryParse(date, out dateParsed))
+                return dateParsed;
+            else
+                return null;
+        }
+
+
+        public static DateTime? GetExifDate(string filePath)
+        {
+            using (var fs = new System.IO.FileStream(filePath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+            {
+                BitmapSource img = BitmapFrame.Create(fs);
+                BitmapMetadata md = (BitmapMetadata)img.Metadata;
+                string date = md.DateTaken;
+                if (String.IsNullOrWhiteSpace(date))
+                {
+                    fs.Close();
+                    return null;
+                }
+                fs.Close();
+                return ExifDateToDateTime(date);                
+            }
+        }
+
+        
 
 
 
@@ -377,9 +423,8 @@ namespace GooglePhotoOrganizer
                     var dateStr = googleFile.ImageMediaMetadata.Date;
                     var sp = dateStr.Split(':');
                     if (sp.Length != 5)
-                        throw new Exception("Wrong google date '" + dateStr + "'");
-                    dateStr = sp[0] + "-" + sp[1] + "-" + sp[2] + ":" + sp[3] + ":" + sp[4];
-                    return DateTime.Parse(dateStr);
+                        throw new Exception("Wrong google date '" + dateStr + "'"); //Wrong exif format
+                    return ExifDateToDateTime(dateStr);
                 }
                 //No data. Will use size
                 var height = googleFile.ImageMediaMetadata.Height;
@@ -466,11 +511,20 @@ namespace GooglePhotoOrganizer
             double nanoseconds = 0;
             if (so.Properties.System == null || so.Properties.System.Media == null || so.Properties.System.Media.Duration == null)
                 return null;
-            double.TryParse(so.Properties.System.Media.Duration.Value.ToString(), out nanoseconds);
+            double.TryParse(so.Properties.System.Media.Duration.Value.ToString(), out nanoseconds);            
             return nanoseconds * 0.00001 / 100.0; //*0.0001
         }
-        
-     
+
+
+        public static bool IsImage(string filePath)
+        {
+            using (var fs = new System.IO.FileStream(filePath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+            {
+                var isImage = IsImage(fs);
+                fs.Close();
+                return isImage;
+            }
+        }
         
         private static bool IsImage(System.IO.FileStream stream)
         {

@@ -27,7 +27,8 @@ namespace GooglePhotoOrganizer
 
         static void FillRecursive(TreeNode curNode, string directory, List<TreeNode> result)
         {
-            var dirs = Directory.GetDirectories(directory);
+            var dirs = Directory.GetDirectories(directory).ToList();
+            dirs.Sort();
             foreach (var dir in dirs)
             {
                 var treeNode = new TreeNode(Path.GetFileName(dir));

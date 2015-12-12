@@ -206,6 +206,7 @@ namespace GooglePhotoOrganizer
                 return;
             }
 
+            richTextBoxLog.Clear();
             var syncronizer = new Synchronizer(progressBar, richTextBoxLog);
 
             //syncronizer.Organize(textBoxLocalPath.Text, _nodes, drivePhotoDirId, diskOrg, albumnOrg);
@@ -219,8 +220,40 @@ namespace GooglePhotoOrganizer
                 richTextBoxLog.AppendText("Error. Check for internet connection. If problem still exists with internet connection, send question to author.\r\n"+ex.ToString());
                 richTextBoxLog.ScrollToCaret();
             }
-            
         }
+
+
+
+        private void buttonDeleteAll_Click(object sender, EventArgs e)
+        {
+
+            var drivePhotoDirId = GetGooglePhotoId();
+            if (String.IsNullOrWhiteSpace(drivePhotoDirId))
+            {
+                return;
+            }
+
+            if (MessageBox.Show("Are you really want move all Google Photo files to trash folder?", "Warning",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
+                return;
+
+            richTextBoxLog.Clear();
+            var syncronizer = new Synchronizer(progressBar, richTextBoxLog);
+
+            //syncronizer.Organize(textBoxLocalPath.Text, _nodes, drivePhotoDirId, diskOrg, albumnOrg);
+            try
+            {
+                if (!RunAction(() => { syncronizer.TrashAll(drivePhotoDirId); }))
+                    return;
+            }
+            catch (Exception ex)
+            {
+                richTextBoxLog.AppendText("Error. Check for internet connection. If problem still exists with internet connection, send question to author.\r\n" + ex.ToString());
+                richTextBoxLog.ScrollToCaret();
+            }
+
+        }
+
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
@@ -305,9 +338,40 @@ namespace GooglePhotoOrganizer
             }
         }
 
+
+      
+        
         private void button1_Click_2(object sender, EventArgs e)
         {
-            MediaKeyMatcher.GetExifImageDateOrMovieLength(@"F:\FOTO\ANN\2010-04-20ДР Ромадиной\DSC00562.JPG");
+            
+        }
+
+        private void buttonDeleteAllPicasa_Click(object sender, EventArgs e)
+        {
+            if (!Directory.Exists(textBoxLocalPath.Text))
+            {
+                MessageBox.Show("Directory not found '" + textBoxLocalPath.Text+"'");
+                return;
+            }
+
+            if (MessageBox.Show("Are you really want move all Photos from picasa Web Albumns?", "Warning",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
+                return;
+
+            richTextBoxLog.Clear();
+            var syncronizer = new Synchronizer(progressBar, richTextBoxLog);
+
+            //syncronizer.Organize(textBoxLocalPath.Text, _nodes, drivePhotoDirId, diskOrg, albumnOrg);
+            try
+            {
+                if (!RunAction(() => { syncronizer.PicasaDeleteAll(textBoxLocalPath.Text); }))
+                    return;
+            }
+            catch (Exception ex)
+            {
+                richTextBoxLog.AppendText("Error. Check for internet connection. If problem still exists with internet connection, send question to author.\r\n" + ex.ToString());
+                richTextBoxLog.ScrollToCaret();
+            }
         }
     }
     

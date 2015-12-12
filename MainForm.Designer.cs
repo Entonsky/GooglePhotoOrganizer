@@ -45,6 +45,8 @@
             this.buttonCancel = new System.Windows.Forms.Button();
             this.labelTimer = new System.Windows.Forms.Label();
             this.button1 = new System.Windows.Forms.Button();
+            this.buttonTrashAll = new System.Windows.Forms.Button();
+            this.buttonDeleteAllPicasa = new System.Windows.Forms.Button();
             this.contextMenuStripTree.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -188,19 +190,45 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(247, 364);
+            this.button1.Location = new System.Drawing.Point(282, 369);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(75, 23);
             this.button1.TabIndex = 12;
             this.button1.Text = "button1";
             this.button1.UseVisualStyleBackColor = true;
+            this.button1.Visible = false;
             this.button1.Click += new System.EventHandler(this.button1_Click_2);
+            // 
+            // buttonTrashAll
+            // 
+            this.buttonTrashAll.Location = new System.Drawing.Point(87, 364);
+            this.buttonTrashAll.Name = "buttonTrashAll";
+            this.buttonTrashAll.Size = new System.Drawing.Size(75, 23);
+            this.buttonTrashAll.TabIndex = 13;
+            this.buttonTrashAll.Text = "Trash All Files";
+            this.buttonTrashAll.UseVisualStyleBackColor = true;
+            this.buttonTrashAll.Visible = false;
+            this.buttonTrashAll.Click += new System.EventHandler(this.buttonDeleteAll_Click);
+            // 
+            // buttonDeleteAllPicasa
+            // 
+            this.buttonDeleteAllPicasa.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.buttonDeleteAllPicasa.Location = new System.Drawing.Point(168, 364);
+            this.buttonDeleteAllPicasa.Name = "buttonDeleteAllPicasa";
+            this.buttonDeleteAllPicasa.Size = new System.Drawing.Size(75, 23);
+            this.buttonDeleteAllPicasa.TabIndex = 14;
+            this.buttonDeleteAllPicasa.Text = "DeleteAllPicasa";
+            this.buttonDeleteAllPicasa.UseVisualStyleBackColor = true;
+            this.buttonDeleteAllPicasa.Visible = false;
+            this.buttonDeleteAllPicasa.Click += new System.EventHandler(this.buttonDeleteAllPicasa_Click);
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(470, 519);
+            this.Controls.Add(this.buttonDeleteAllPicasa);
+            this.Controls.Add(this.buttonTrashAll);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.labelTimer);
             this.Controls.Add(this.buttonCancel);
@@ -238,6 +266,8 @@
         private System.Windows.Forms.ToolStripMenuItem doNotMakeAlbumsWithSubFolderNamesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem makeAlbumsWithSubfolderNamesToolStripMenuItem;
         private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button buttonTrashAll;
+        private System.Windows.Forms.Button buttonDeleteAllPicasa;
     }
 }
 

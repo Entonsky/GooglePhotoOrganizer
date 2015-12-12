@@ -208,7 +208,23 @@ namespace GooglePhotoOrganizer
                 PicasaEntry updatedEntry = (PicasaEntry)photo.Update();
             }
         }
-        
+
+
+        public void DeletePhoto(PicasaEntry photo)
+        {
+            var service = GetPicasaService();
+            try
+            {
+                photo.Delete();
+            }
+            catch
+            {
+                //If a first error. Try recreate service 
+                service = GetPicasaService(true);
+                photo.Delete();
+            }
+        }
+
 
         public PicasaEntry UploadPhoto(string filePath, string albumId = "default")
         {

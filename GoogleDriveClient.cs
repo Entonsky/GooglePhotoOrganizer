@@ -128,7 +128,7 @@ namespace GooglePhotoOrganizer
                 listRequest.Q+= " and title='" + title + "'";
             if (parentId != null)
                 listRequest.Q += " and '" + parentId + "' in parents";
-
+            
             listRequest.MaxResults = 1000;
             
             // List files.
@@ -240,6 +240,13 @@ namespace GooglePhotoOrganizer
             File file = new File();
             file.CreatedDate = createdDate;
             FilesResource.PatchRequest request = GetDriveService().Files.Patch(file, fileId);
+            return request.Execute();
+        }
+
+
+        public File TrashFile(string fileId)
+        {
+            var request = GetDriveService().Files.Trash(fileId);
             return request.Execute();
         }
 

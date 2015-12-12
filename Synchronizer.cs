@@ -174,7 +174,7 @@ namespace GooglePhotoOrganizer
                 }
             }
 
-            if (localFiles.ContainsKey(fileName))
+            if (!localFiles.ContainsKey(fileName))
                 return;
 
             List<File> googleFilesSelect;
@@ -479,6 +479,75 @@ namespace GooglePhotoOrganizer
         }
 
 
+
+        public void TrashAll(string drivePhotoDirId)
+        {
+            GoogleDriveClient drive = new GoogleDriveClient();
+            
+            LogText("Search for files already in Google Photos directory on Google Drive. It can take a long time...");
+            var googleFilesLst = drive.GetFiles(null, null);
+            if (googleFilesLst.Count == 0)
+            {
+                LogText("No files found");
+                return;
+            }
+            else
+                LogText("Found " + googleFilesLst.Count + " files");
+
+            ResetProgress(googleFilesLst.Count);
+            LogText("MOVE ALL FILES TO TRASH...");
+            foreach (var file in googleFilesLst)
+            {
+                drive.TrashFile(file.Id);
+                IncreaseProgress();                
+            }
+            ResetProgress(10);
+            LogText("READY");
+        }
+
+
+
+        public void PicasaDeleteAll(string localPath)
+        {
+            var picasa = new PicasaClient();
+
+            LogText("GetAlbums...");
+
+            var albums = picasa.GetAlbums();
+            ResetProgress(albums.Count);
+            LogText("Delete from albums...");
+            foreach (var album in albums)
+            {
+                var picFiles = picasa.GetPhotos(album.Id);
+                foreach (var picFile in picFiles)
+                {
+                    picasa.DeletePhoto(picFile);
+                }
+                IncreaseProgress();
+            }
+
+            LogText("Get all files in " + localPath);
+            var files = System.IO.Directory.GetFiles(localPath, "*", System.IO.SearchOption.AllDirectories);
+            ResetProgress(files.Length);
+            var searched = new HashSet<string>();
+            
+            foreach (var localFile in files)
+            {
+                var fName = System.IO.Path.GetFileName(localFile);
+                if (searched.Contains(fName))
+                    continue;
+                searched.Add(fName);
+
+                var filesForDel = picasa.GetPhotos(null, fName);
+                foreach (var picFile in filesForDel)
+                {
+                    picasa.DeletePhoto(picFile);
+                }
+                IncreaseProgress();
+            }
+            ResetProgress(10);
+            LogText("READY");
+        }
 
 
 
