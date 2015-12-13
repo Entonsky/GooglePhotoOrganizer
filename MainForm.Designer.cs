@@ -47,6 +47,7 @@
             this.button1 = new System.Windows.Forms.Button();
             this.buttonTrashAll = new System.Windows.Forms.Button();
             this.buttonDeleteAllPicasa = new System.Windows.Forms.Button();
+            this.folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
             this.contextMenuStripTree.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -56,6 +57,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.richTextBoxLog.Location = new System.Drawing.Point(-1, 395);
             this.richTextBoxLog.Name = "richTextBoxLog";
+            this.richTextBoxLog.ReadOnly = true;
             this.richTextBoxLog.Size = new System.Drawing.Size(471, 98);
             this.richTextBoxLog.TabIndex = 1;
             this.richTextBoxLog.Text = "";
@@ -64,9 +66,10 @@
             // 
             this.textBoxLocalPath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.textBoxLocalPath.Location = new System.Drawing.Point(73, 10);
+            this.textBoxLocalPath.Location = new System.Drawing.Point(116, 10);
             this.textBoxLocalPath.Name = "textBoxLocalPath";
-            this.textBoxLocalPath.Size = new System.Drawing.Size(302, 20);
+            this.textBoxLocalPath.ReadOnly = true;
+            this.textBoxLocalPath.Size = new System.Drawing.Size(316, 20);
             this.textBoxLocalPath.TabIndex = 3;
             this.textBoxLocalPath.Text = "C:\\Users\\Alexey\\Desktop\\";
             // 
@@ -75,9 +78,9 @@
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(5, 13);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(62, 13);
+            this.label1.Size = new System.Drawing.Size(105, 13);
             this.label1.TabIndex = 4;
-            this.label1.Text = "LocalFolder";
+            this.label1.Text = "Template local folder";
             // 
             // treeViewDirectories
             // 
@@ -139,11 +142,11 @@
             // buttonScanDirectory
             // 
             this.buttonScanDirectory.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonScanDirectory.Location = new System.Drawing.Point(381, 8);
+            this.buttonScanDirectory.Location = new System.Drawing.Point(438, 8);
             this.buttonScanDirectory.Name = "buttonScanDirectory";
-            this.buttonScanDirectory.Size = new System.Drawing.Size(84, 23);
+            this.buttonScanDirectory.Size = new System.Drawing.Size(27, 23);
             this.buttonScanDirectory.TabIndex = 6;
-            this.buttonScanDirectory.Text = "Scan Dir";
+            this.buttonScanDirectory.Text = "...";
             this.buttonScanDirectory.UseVisualStyleBackColor = true;
             this.buttonScanDirectory.Click += new System.EventHandler(this.buttonGetDirectories_Click);
             // 
@@ -181,16 +184,16 @@
             // 
             // labelTimer
             // 
-            this.labelTimer.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.labelTimer.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.labelTimer.AutoSize = true;
-            this.labelTimer.Location = new System.Drawing.Point(276, 369);
+            this.labelTimer.Location = new System.Drawing.Point(351, 367);
             this.labelTimer.Name = "labelTimer";
             this.labelTimer.Size = new System.Drawing.Size(0, 13);
             this.labelTimer.TabIndex = 11;
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(282, 369);
+            this.button1.Location = new System.Drawing.Point(249, 365);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(75, 23);
             this.button1.TabIndex = 12;
@@ -243,6 +246,7 @@
             this.Name = "MainForm";
             this.Text = "Google Photos Organizer";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
+            this.Load += new System.EventHandler(this.MainForm_Load);
             this.Shown += new System.EventHandler(this.MainForm_Shown);
             this.contextMenuStripTree.ResumeLayout(false);
             this.ResumeLayout(false);
@@ -268,6 +272,7 @@
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Button buttonTrashAll;
         private System.Windows.Forms.Button buttonDeleteAllPicasa;
+        private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog;
     }
 }
 

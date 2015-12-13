@@ -72,6 +72,7 @@ namespace GooglePhotoOrganizer
                     break;
             }
 
+            progressBar.Value = 0;
 
             if (lastEx != null)
             {
@@ -128,6 +129,11 @@ namespace GooglePhotoOrganizer
         
         private void buttonGetDirectories_Click(object sender, EventArgs e)
         {
+            if (folderBrowserDialog.ShowDialog() != DialogResult.OK)
+                return;
+
+            textBoxLocalPath.Text = folderBrowserDialog.SelectedPath;
+
             if (!Directory.Exists(textBoxLocalPath.Text))
             {
                 MessageBox.Show("Directory '" + textBoxLocalPath.Text + "' not found");
@@ -146,48 +152,6 @@ namespace GooglePhotoOrganizer
                 subNode.Checked = node.Checked;
         }
 
-        private string GetGooglePhotoId()
-        {
-            List<string> sugestionNames = new List<string>() { "Google Photos", "Google Фото", "Google Photo" };
-            var photoFolders = new List<Google.Apis.Drive.v2.Data.File>();
-
-            try
-            {
-                var google = new GoogleDriveClient();
-                foreach (var sg in sugestionNames)
-                {
-                    photoFolders = google.GetDirectories(sg, "root");
-                    if (photoFolders.Count > 0)
-                        break;
-                }
-            }
-            catch
-            {
-                MessageBox.Show("Can't connect to google drive. No internet connection?");
-                return null;
-            }
-            
-            if (photoFolders.Count == 0)
-            {
-                MessageBox.Show(@"Can't find 'Google Photos' folder on google drive.\r\n" +
-                    "You should activate it:\r\n" +
-                    "1. Sign in to Google Drive with your Google Account. \r\n" +
-                    "2. Click on the Cog icon located at the top right corner of your screen\r\n" +
-                    "and then select Settings > General." +
-                    "3. Scroll to Create a Google Photos folder and tick the Automatically put your\r\n" +
-                    "Google Photos into a folder in My Drive checkbox and that's it.\r\n\r\n" +
-                    "If something goes wrong - google for: 'How to add a Google Photos Folder to Google Drive'");
-                return null;
-            }
-            if (photoFolders.Count > 1)
-            {
-                MessageBox.Show("Unexpected error. Too many photo folders.\r\n Remove 'Google photos' folders, which is not needed.");
-                return null;
-            }
-            return photoFolders[0].Id;
-        }
-        
-                
         
         private void buttonUpload_Click(object sender, EventArgs e)
         {
@@ -200,7 +164,7 @@ namespace GooglePhotoOrganizer
             bool diskOrg = true;
             bool albumnOrg = true;
 
-            var drivePhotoDirId = GetGooglePhotoId();
+            var drivePhotoDirId = GetGooglePhotosFolder.GetGooglePhotoFolderId();
             if (String.IsNullOrWhiteSpace(drivePhotoDirId))
             {
                 return;
@@ -227,7 +191,7 @@ namespace GooglePhotoOrganizer
         private void buttonDeleteAll_Click(object sender, EventArgs e)
         {
 
-            var drivePhotoDirId = GetGooglePhotoId();
+            var drivePhotoDirId = GetGooglePhotosFolder.GetGooglePhotoFolderId();
             if (String.IsNullOrWhiteSpace(drivePhotoDirId))
             {
                 return;
@@ -343,7 +307,8 @@ namespace GooglePhotoOrganizer
         
         private void button1_Click_2(object sender, EventArgs e)
         {
-            
+            var pic = new PicasaClient();
+            var files  = pic.GetPhotos(null, "MVI");
         }
 
         private void buttonDeleteAllPicasa_Click(object sender, EventArgs e)
@@ -372,6 +337,11 @@ namespace GooglePhotoOrganizer
                 richTextBoxLog.AppendText("Error. Check for internet connection. If problem still exists with internet connection, send question to author.\r\n" + ex.ToString());
                 richTextBoxLog.ScrollToCaret();
             }
+        }
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            
         }
     }
     

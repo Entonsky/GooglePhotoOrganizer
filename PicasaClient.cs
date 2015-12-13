@@ -74,7 +74,7 @@ namespace GooglePhotoOrganizer
                     throw new NotImplementedException("Unknown kind");
             }
 
-            query.NumberToRetrieve = 100;
+            query.NumberToRetrieve = 1000;
 
 
 
