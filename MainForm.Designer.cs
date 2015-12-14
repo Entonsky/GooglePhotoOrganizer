@@ -44,7 +44,7 @@
             this.buttonOrganize = new System.Windows.Forms.Button();
             this.buttonCancel = new System.Windows.Forms.Button();
             this.labelTimer = new System.Windows.Forms.Label();
-            this.button1 = new System.Windows.Forms.Button();
+            this.buttonAbout = new System.Windows.Forms.Button();
             this.buttonTrashAll = new System.Windows.Forms.Button();
             this.buttonDeleteAllPicasa = new System.Windows.Forms.Button();
             this.folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
@@ -186,25 +186,24 @@
             // 
             this.labelTimer.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.labelTimer.AutoSize = true;
-            this.labelTimer.Location = new System.Drawing.Point(351, 367);
+            this.labelTimer.Location = new System.Drawing.Point(328, 370);
             this.labelTimer.Name = "labelTimer";
             this.labelTimer.Size = new System.Drawing.Size(0, 13);
             this.labelTimer.TabIndex = 11;
             // 
-            // button1
+            // buttonAbout
             // 
-            this.button1.Location = new System.Drawing.Point(249, 365);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
-            this.button1.TabIndex = 12;
-            this.button1.Text = "button1";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Visible = false;
-            this.button1.Click += new System.EventHandler(this.button1_Click_2);
+            this.buttonAbout.Location = new System.Drawing.Point(87, 364);
+            this.buttonAbout.Name = "buttonAbout";
+            this.buttonAbout.Size = new System.Drawing.Size(75, 23);
+            this.buttonAbout.TabIndex = 12;
+            this.buttonAbout.Text = "About";
+            this.buttonAbout.UseVisualStyleBackColor = true;
+            this.buttonAbout.Click += new System.EventHandler(this.buttonAbout_Click);
             // 
             // buttonTrashAll
             // 
-            this.buttonTrashAll.Location = new System.Drawing.Point(87, 364);
+            this.buttonTrashAll.Location = new System.Drawing.Point(168, 389);
             this.buttonTrashAll.Name = "buttonTrashAll";
             this.buttonTrashAll.Size = new System.Drawing.Size(75, 23);
             this.buttonTrashAll.TabIndex = 13;
@@ -216,7 +215,7 @@
             // buttonDeleteAllPicasa
             // 
             this.buttonDeleteAllPicasa.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.buttonDeleteAllPicasa.Location = new System.Drawing.Point(168, 364);
+            this.buttonDeleteAllPicasa.Location = new System.Drawing.Point(168, 360);
             this.buttonDeleteAllPicasa.Name = "buttonDeleteAllPicasa";
             this.buttonDeleteAllPicasa.Size = new System.Drawing.Size(75, 23);
             this.buttonDeleteAllPicasa.TabIndex = 14;
@@ -232,7 +231,7 @@
             this.ClientSize = new System.Drawing.Size(470, 519);
             this.Controls.Add(this.buttonDeleteAllPicasa);
             this.Controls.Add(this.buttonTrashAll);
-            this.Controls.Add(this.button1);
+            this.Controls.Add(this.buttonAbout);
             this.Controls.Add(this.labelTimer);
             this.Controls.Add(this.buttonCancel);
             this.Controls.Add(this.buttonOrganize);
@@ -269,7 +268,7 @@
         private System.Windows.Forms.ToolStripMenuItem makeAlbumWithFolderNameToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem doNotMakeAlbumsWithSubFolderNamesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem makeAlbumsWithSubfolderNamesToolStripMenuItem;
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button buttonAbout;
         private System.Windows.Forms.Button buttonTrashAll;
         private System.Windows.Forms.Button buttonDeleteAllPicasa;
         private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog;

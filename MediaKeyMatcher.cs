@@ -94,7 +94,7 @@ namespace GooglePhotoOrganizer
                     return MediaKeyMatcher.GetMinDateKey((PicasaEntry)file, exifGoogle);
                 });
 
-            /*
+            
             if (localNotMatched.Count>0 || googleNotMatched.Count>0 || picasaNotMatched.Count>0)
             {
                 var defaultKey = "Default";
@@ -106,8 +106,7 @@ namespace GooglePhotoOrganizer
                     result[defaultKey].googleFiles.Add(file);
                 foreach (PicasaEntry file in picasaNotMatched)
                     result[defaultKey].picasaFiles.Add(file);
-            }*/
-
+            }
 
             return result.Values.ToList();
         }

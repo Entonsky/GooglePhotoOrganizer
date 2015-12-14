@@ -305,10 +305,10 @@ namespace GooglePhotoOrganizer
 
       
         
-        private void button1_Click_2(object sender, EventArgs e)
+        private void buttonAbout_Click(object sender, EventArgs e)
         {
-            var pic = new PicasaClient();
-            var files  = pic.GetPhotos(null, "MVI");
+            var aboutForm = new AboutForm();
+            aboutForm.ShowDialog();
         }
 
         private void buttonDeleteAllPicasa_Click(object sender, EventArgs e)

@@ -1,16 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using System.Runtime.Serialization.Json;
-using Google.Apis.Auth.OAuth2.Responses;
-using Google.Apis.Auth.OAuth2.Flows;
 using Google.GData.Photos;
 using Google.GData.Client;
-using System.Security.Cryptography.X509Certificates;
 using Google.Picasa;
 
 
