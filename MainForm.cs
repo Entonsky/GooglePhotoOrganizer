@@ -98,11 +98,6 @@ namespace GooglePhotoOrganizer
                                 
       
 
-        private void button1_Click(object sender, EventArgs e)
-        {
-
-        }
-
 
 
         bool alreadyShown = false;
@@ -114,15 +109,24 @@ namespace GooglePhotoOrganizer
         {
             if (!alreadyShown)
             {
-                try
-                {
-                    var res = TreeSaver.LoadTreeView(treeViewDirectories, out _nodes);
-                    textBoxLocalPath.Text = res.Text;
-                }
-                catch   { };
-                
-
                 alreadyShown = true;
+                if (String.IsNullOrWhiteSpace(GetGooglePhotosFolder.GetGooglePhotoFolderId()))
+                {
+                    MessageBox.Show("Can't open google photos folder.");
+                    this.Close();
+                }
+                else
+                {
+                    try
+                    {
+                        var res = TreeSaver.LoadTreeView(treeViewDirectories, out _nodes);
+                        if (res != null && String.IsNullOrWhiteSpace(res.Text))
+                            textBoxLocalPath.Text = res.Text;
+                    }
+                    catch { };
+                }
+
+
             }
 
         }
@@ -221,7 +225,8 @@ namespace GooglePhotoOrganizer
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            TreeSaver.SaveTreeView(treeViewDirectories);
+            if (treeViewDirectories.Nodes.Count>0)
+                TreeSaver.SaveTreeView(treeViewDirectories);
         }
 
         private void treeViewDirectories_ContextMenuStripChanged(object sender, EventArgs e)
@@ -267,7 +272,7 @@ namespace GooglePhotoOrganizer
 
             var snd = (ToolStripMenuItem)sender;
             
-            if (snd.Tag == "false")
+            if (snd.Tag is string && (string)snd.Tag == "false")
                 treeViewDirectories.SelectedNode.ForeColor = Color.Black;
             else
                 treeViewDirectories.SelectedNode.ForeColor = Color.Gray;
@@ -286,7 +291,7 @@ namespace GooglePhotoOrganizer
             var snd = (ToolStripMenuItem)sender;
 
             Color color;
-            if (snd.Tag == "false")
+            if (snd.Tag is string && (string)snd.Tag == "false")
                 color = Color.Black;
             else
                 color = Color.Gray;

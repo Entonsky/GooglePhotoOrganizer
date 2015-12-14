@@ -61,8 +61,7 @@ namespace GooglePhotoOrganizer
             if (_googlePhotoFolderId != null)
                 return _googlePhotoFolderId;
 
-
-
+            
             List<string> sugestionNames = new List<string>() { "Google Photos", "Google Фото", "Google Photo" };
             var local = GetSavedName();
             if (!String.IsNullOrWhiteSpace(local))
@@ -70,20 +69,29 @@ namespace GooglePhotoOrganizer
             
 
             var photoFolders = new List<Google.Apis.Drive.v2.Data.File>();
-            try
+            while (true)
             {
-                var google = new GoogleDriveClient();
-                foreach (var sg in sugestionNames)
+                try
                 {
-                    photoFolders = google.GetDirectories(sg, "root");
-                    if (photoFolders.Count > 0)
-                        break;
+                    var google = new GoogleDriveClient();
+                    foreach (var sg in sugestionNames)
+                    {
+                        photoFolders = google.GetDirectories(sg, "root");
+                        if (photoFolders.Count > 0)
+                            break;
+                    }
                 }
-            }
-            catch
-            {
-                MessageBox.Show("Can't connect to google drive. No internet connection?");
-                return null;
+                catch (Exception ex)
+                {
+                    if (MessageBox.Show("Can't connect to google drive. Probably something wrong with your internet connection?\r\nTry again please.\r\n"+
+                        "\r\nException Code:\r\n"+ex.ToString(),
+                        "Warning", MessageBoxButtons.RetryCancel, MessageBoxIcon.Warning) ==
+                        DialogResult.Retry)
+                        continue;
+                    else
+                        return null;
+                }
+                break;
             }
 
             if (photoFolders.Count == 1)

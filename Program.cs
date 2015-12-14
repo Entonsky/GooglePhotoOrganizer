@@ -25,8 +25,6 @@ namespace GooglePhotoOrganizer
             
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            if (String.IsNullOrWhiteSpace(GetGooglePhotosFolder.GetGooglePhotoFolderId()))
-                return;
             Application.Run(new MainForm());
 
             GC.KeepAlive(mutex);
