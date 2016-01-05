@@ -31,15 +31,13 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.richTextBoxLog = new System.Windows.Forms.RichTextBox();
-            this.textBoxLocalPath = new System.Windows.Forms.TextBox();
-            this.label1 = new System.Windows.Forms.Label();
             this.treeViewDirectories = new System.Windows.Forms.TreeView();
             this.contextMenuStripTree = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.doNotMakeAlbumWithFolderNameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.doNotMakeAlbumsWithSubFolderNamesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.makeAlbumWithFolderNameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.makeAlbumsWithSubfolderNamesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.buttonScanDirectory = new System.Windows.Forms.Button();
+            this.buttonAddDirectory = new System.Windows.Forms.Button();
             this.progressBar = new System.Windows.Forms.ProgressBar();
             this.buttonOrganize = new System.Windows.Forms.Button();
             this.buttonCancel = new System.Windows.Forms.Button();
@@ -48,6 +46,8 @@
             this.buttonTrashAll = new System.Windows.Forms.Button();
             this.buttonDeleteAllPicasa = new System.Windows.Forms.Button();
             this.folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
+            this.button1 = new System.Windows.Forms.Button();
+            this.buttonClear = new System.Windows.Forms.Button();
             this.contextMenuStripTree.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -61,26 +61,6 @@
             this.richTextBoxLog.Size = new System.Drawing.Size(471, 98);
             this.richTextBoxLog.TabIndex = 1;
             this.richTextBoxLog.Text = "";
-            // 
-            // textBoxLocalPath
-            // 
-            this.textBoxLocalPath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.textBoxLocalPath.Location = new System.Drawing.Point(116, 10);
-            this.textBoxLocalPath.Name = "textBoxLocalPath";
-            this.textBoxLocalPath.ReadOnly = true;
-            this.textBoxLocalPath.Size = new System.Drawing.Size(316, 20);
-            this.textBoxLocalPath.TabIndex = 3;
-            this.textBoxLocalPath.Text = "C:\\Users\\Alexey\\Desktop\\";
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(5, 13);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(105, 13);
-            this.label1.TabIndex = 4;
-            this.label1.Text = "Template local folder";
             // 
             // treeViewDirectories
             // 
@@ -139,16 +119,16 @@
             this.makeAlbumsWithSubfolderNamesToolStripMenuItem.Text = "Make albums with subfolder names";
             this.makeAlbumsWithSubfolderNamesToolStripMenuItem.Click += new System.EventHandler(this.makeThisDictionaryAndSubsAsAlbumToolStripMenuItem_Click);
             // 
-            // buttonScanDirectory
+            // buttonAddDirectory
             // 
-            this.buttonScanDirectory.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonScanDirectory.Location = new System.Drawing.Point(438, 8);
-            this.buttonScanDirectory.Name = "buttonScanDirectory";
-            this.buttonScanDirectory.Size = new System.Drawing.Size(27, 23);
-            this.buttonScanDirectory.TabIndex = 6;
-            this.buttonScanDirectory.Text = "...";
-            this.buttonScanDirectory.UseVisualStyleBackColor = true;
-            this.buttonScanDirectory.Click += new System.EventHandler(this.buttonGetDirectories_Click);
+            this.buttonAddDirectory.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonAddDirectory.Location = new System.Drawing.Point(6, 7);
+            this.buttonAddDirectory.Name = "buttonAddDirectory";
+            this.buttonAddDirectory.Size = new System.Drawing.Size(64, 23);
+            this.buttonAddDirectory.TabIndex = 6;
+            this.buttonAddDirectory.Text = "Add Dir";
+            this.buttonAddDirectory.UseVisualStyleBackColor = true;
+            this.buttonAddDirectory.Click += new System.EventHandler(this.buttonGetDirectories_Click);
             // 
             // progressBar
             // 
@@ -193,6 +173,7 @@
             // 
             // buttonAbout
             // 
+            this.buttonAbout.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.buttonAbout.Location = new System.Drawing.Point(87, 364);
             this.buttonAbout.Name = "buttonAbout";
             this.buttonAbout.Size = new System.Drawing.Size(75, 23);
@@ -224,11 +205,33 @@
             this.buttonDeleteAllPicasa.Visible = false;
             this.buttonDeleteAllPicasa.Click += new System.EventHandler(this.buttonDeleteAllPicasa_Click);
             // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(291, 365);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.TabIndex = 15;
+            this.button1.Text = "button1";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
+            // 
+            // buttonClear
+            // 
+            this.buttonClear.Location = new System.Drawing.Point(92, 7);
+            this.buttonClear.Name = "buttonClear";
+            this.buttonClear.Size = new System.Drawing.Size(49, 23);
+            this.buttonClear.TabIndex = 16;
+            this.buttonClear.Text = "Clear";
+            this.buttonClear.UseVisualStyleBackColor = true;
+            this.buttonClear.Click += new System.EventHandler(this.buttonClear_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(470, 519);
+            this.Controls.Add(this.buttonClear);
+            this.Controls.Add(this.button1);
             this.Controls.Add(this.buttonDeleteAllPicasa);
             this.Controls.Add(this.buttonTrashAll);
             this.Controls.Add(this.buttonAbout);
@@ -236,10 +239,8 @@
             this.Controls.Add(this.buttonCancel);
             this.Controls.Add(this.buttonOrganize);
             this.Controls.Add(this.progressBar);
-            this.Controls.Add(this.buttonScanDirectory);
+            this.Controls.Add(this.buttonAddDirectory);
             this.Controls.Add(this.treeViewDirectories);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.textBoxLocalPath);
             this.Controls.Add(this.richTextBoxLog);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "MainForm";
@@ -255,10 +256,8 @@
 
         #endregion
         private System.Windows.Forms.RichTextBox richTextBoxLog;
-        private System.Windows.Forms.TextBox textBoxLocalPath;
-        private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TreeView treeViewDirectories;
-        private System.Windows.Forms.Button buttonScanDirectory;
+        private System.Windows.Forms.Button buttonAddDirectory;
         private System.Windows.Forms.ProgressBar progressBar;
         private System.Windows.Forms.Button buttonOrganize;
         private System.Windows.Forms.Button buttonCancel;
@@ -272,6 +271,8 @@
         private System.Windows.Forms.Button buttonTrashAll;
         private System.Windows.Forms.Button buttonDeleteAllPicasa;
         private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog;
+        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button buttonClear;
     }
 }
 

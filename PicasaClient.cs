@@ -43,7 +43,42 @@ namespace GooglePhotoOrganizer
             return _picasaService;
         }
 
+        
 
+
+        public void Test()
+        {
+            RequestSettings settings = new RequestSettings("yourApp");
+            settings.PageSize = 50000;
+            settings.AutoPaging = true;
+            
+            PicasaRequest pr = new PicasaRequest(settings);
+            pr.Service = GetPicasaService();
+            Feed<Photo> feed = pr.GetPhotos();
+            
+            int cnt = 0;
+
+            Photo x = null;
+
+            foreach (Photo p in feed.Entries)
+            {
+                if (p.Title.ToLower() == "2005-12-16Kovalev_Zachet.avi".ToLower())
+                {
+                    x = p;
+                    break;
+                }
+                cnt++;
+            }
+            var longTime = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
+
+            x.Timestamp = Convert.ToUInt64(longTime);
+
+
+            pr.Update(x);
+            
+
+            Console.WriteLine(cnt);
+        }
 
 
 
@@ -185,8 +220,26 @@ namespace GooglePhotoOrganizer
         {
             PhotoAccessor ac = new PhotoAccessor(photo);
             ac.AlbumId = newAlbumId;
-            var a = DateTime.Now.AddYears(-1);
-            ac.Timestamp = (ulong)a.Ticks;
+            try
+            {
+                PicasaEntry updatedEntry = (PicasaEntry)photo.Update();
+            }
+            catch
+            {
+                var service = GetPicasaService(true);
+                photo.Service = service;
+                PicasaEntry updatedEntry = (PicasaEntry)photo.Update();
+            }
+        }
+
+
+        public void SetPhotoCreationDate(PicasaEntry photo, DateTime creationDate)
+        {
+            //PhotoAccessor ac = new PhotoAccessor(photo);
+            var longTime = (creationDate.ToUniversalTime().Subtract(new DateTime(1970, 1, 1))).TotalMilliseconds;
+            //ac.Timestamp = Convert.ToUInt64(longTime);
+            //photo.Published = creationDate.ToUniversalTime();
+            photo.SetPhotoExtensionValue("timestamp", Convert.ToUInt64(longTime).ToString());
 
             try
             {

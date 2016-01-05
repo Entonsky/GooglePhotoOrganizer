@@ -117,13 +117,7 @@ namespace GooglePhotoOrganizer
                 }
                 else
                 {
-                    try
-                    {
-                        var res = TreeSaver.LoadTreeView(treeViewDirectories, out _nodes);
-                        if (res != null && String.IsNullOrWhiteSpace(res.Text))
-                            textBoxLocalPath.Text = res.Text;
-                    }
-                    catch { };
+                    _nodes = PathTreeWorker.LoadTreeView(treeViewDirectories);
                 }
 
 
@@ -135,17 +129,15 @@ namespace GooglePhotoOrganizer
         {
             if (folderBrowserDialog.ShowDialog() != DialogResult.OK)
                 return;
-
-            textBoxLocalPath.Text = folderBrowserDialog.SelectedPath;
-
-            if (!Directory.Exists(textBoxLocalPath.Text))
+            
+            if (!Directory.Exists(folderBrowserDialog.SelectedPath))
             {
-                MessageBox.Show("Directory '" + textBoxLocalPath.Text + "' not found");
+                MessageBox.Show("Directory '" + folderBrowserDialog.SelectedPath + "' not found");
                 return;
             }
-
-            _nodes = FileWorker.FillTreeViewWithDirs(textBoxLocalPath.Text, treeViewDirectories);
-            TreeSaver.SaveTreeView(treeViewDirectories);
+            
+            _nodes = PathTreeWorker.AddDirToTreeView(folderBrowserDialog.SelectedPath, treeViewDirectories);
+            PathTreeWorker.SaveTreeView(treeViewDirectories);
         }
         
         private void treeViewDirectories_AfterCheck(object sender, TreeViewEventArgs e)
@@ -180,7 +172,11 @@ namespace GooglePhotoOrganizer
             //syncronizer.Organize(textBoxLocalPath.Text, _nodes, drivePhotoDirId, diskOrg, albumnOrg);
             try
             {
-                if (!RunAction(() => { syncronizer.Organize(textBoxLocalPath.Text, _nodes, drivePhotoDirId, diskOrg, albumnOrg); }))
+                var rootNodes = new List<TreeNode>();
+                foreach (TreeNode node in treeViewDirectories.Nodes)
+                    rootNodes.Add(node);
+
+                if (!RunAction(() => { syncronizer.Organize(rootNodes, drivePhotoDirId, diskOrg, albumnOrg); }))
                     return;
             }
             catch (Exception ex)
@@ -226,7 +222,7 @@ namespace GooglePhotoOrganizer
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (treeViewDirectories.Nodes.Count>0)
-                TreeSaver.SaveTreeView(treeViewDirectories);
+                PathTreeWorker.SaveTreeView(treeViewDirectories);
         }
 
         private void treeViewDirectories_ContextMenuStripChanged(object sender, EventArgs e)
@@ -318,6 +314,7 @@ namespace GooglePhotoOrganizer
 
         private void buttonDeleteAllPicasa_Click(object sender, EventArgs e)
         {
+            /*
             if (!Directory.Exists(textBoxLocalPath.Text))
             {
                 MessageBox.Show("Directory not found '" + textBoxLocalPath.Text+"'");
@@ -341,12 +338,53 @@ namespace GooglePhotoOrganizer
             {
                 richTextBoxLog.AppendText("Error. Check for internet connection. If problem still exists with internet connection, send question to author.\r\n" + ex.ToString());
                 richTextBoxLog.ScrollToCaret();
-            }
+            }*/
         }
 
         private void MainForm_Load(object sender, EventArgs e)
         {
             
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            PicasaClient picasa = new PicasaClient();
+            var alreadyFoundExt = new HashSet<string>();
+
+            //picasa.Test();
+
+            var foundAlbums = new HashSet<string>();
+            var picasaFoundFiles = picasa.GetPhotos(null, ".avi");
+            PicasaEntry pe = null;
+            foreach (var file in picasaFoundFiles)
+            {
+                var ph = new PhotoAccessor(file);
+
+                if (ph.PhotoTitle.ToLower()== "2005-12-16Mafia.avi".ToLower())
+                {
+                    pe = file;
+                    var value = ph.Timestamp;
+                    var tmp = new DateTime(1970, 1, 1, 0, 0, 0);
+                    tmp = tmp.AddMilliseconds(value);
+
+                    break;
+                }
+            }
+
+
+            picasa.SetPhotoCreationDate(pe, DateTime.Now);
+
+
+
+
+
+            MessageBox.Show(pe.Title.ToString());
+        }
+
+        private void buttonClear_Click(object sender, EventArgs e)
+        {
+            treeViewDirectories.Nodes.Clear();
+            PathTreeWorker.SaveTreeView(treeViewDirectories, false);
         }
     }
     

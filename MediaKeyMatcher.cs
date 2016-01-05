@@ -5,7 +5,7 @@ using System.Windows.Media.Imaging;
 using Microsoft.WindowsAPICodePack.Shell;
 using Google.GData.Photos;
 using Google.Apis.Drive.v2.Data;
-using System.Drawing.Imaging;
+using System.Drawing;
 
 namespace GooglePhotoOrganizer
 {
@@ -62,22 +62,22 @@ namespace GooglePhotoOrganizer
             var googleNotMatched = new HashSet<File>(googleFiles);
             var picasaNotMatched = new HashSet<PicasaEntry>(picasaFiles);
 
-            //Match by exif date and video size
+            //Match by exif date
             MatchFilesWithTheSameNameByType(result,
                 localNotMatched, googleNotMatched, picasaNotMatched,
                 (object file) =>
                 {
-                    return MediaKeyMatcher.GetExifImageDateOrMovieLength(((FileDesc)file).path);
+                    return MediaKeyMatcher.GetExifImageDate(((FileDesc)file).path);
                 },
                 (object file) =>
                 {
-                    return MediaKeyMatcher.GetExifImageDateOrMovieLength((File)file);
+                    return MediaKeyMatcher.GetExifImageDate((File)file);
                 },
                 (object file, Dictionary<object, List<object>> exifGoogle) =>
                 {
-                    return MediaKeyMatcher.GetExifImageDateOrMovieLength((PicasaEntry)file, true, exifGoogle);
+                    return MediaKeyMatcher.GetPicasaKeyByDriveKey((PicasaEntry)file, exifGoogle);
                 });
-
+            
             //match by creationDate
             MatchFilesWithTheSameNameByType(result,
                 localNotMatched, googleNotMatched, picasaNotMatched,
@@ -91,10 +91,27 @@ namespace GooglePhotoOrganizer
                 },
                 (object file, Dictionary<object, List<object>> exifGoogle) =>
                 {
-                    return MediaKeyMatcher.GetMinDateKey((PicasaEntry)file, exifGoogle);
+                    return MediaKeyMatcher.GetPicasaKeyByDriveKey((PicasaEntry)file, exifGoogle);
                 });
 
-            
+
+            //Match by image Size or movielength
+            MatchFilesWithTheSameNameByType(result,
+                localNotMatched, googleNotMatched, picasaNotMatched,
+                (object file) =>
+                {
+                    return MediaKeyMatcher.GetImageSizeOrMovieLength(((FileDesc)file).path);
+                },
+                (object file) =>
+                {
+                    return MediaKeyMatcher.GetImageSizeOrMovieLength((File)file);
+                },
+                (object file, Dictionary<object, List<object>> exifGoogle) =>
+                {
+                    return MediaKeyMatcher.GetPicasaKeyByDriveKey((PicasaEntry)file, exifGoogle);
+                });
+
+
             if (localNotMatched.Count>0 || googleNotMatched.Count>0 || picasaNotMatched.Count>0)
             {
                 var defaultKey = "Default";
@@ -136,6 +153,8 @@ namespace GooglePhotoOrganizer
                 else
                     return false;
             }
+            if (key1 is String && key2 is String)
+                return key1.ToString() == key2.ToString();
             return key1 == key2;
         }
 
@@ -200,6 +219,15 @@ namespace GooglePhotoOrganizer
             var exifLocal = MakeKeyDict(localFiles, localExtractor);
             var exifGoogle = MakeKeyDict(googleFiles, googleExtractor);
             var exifPicasa = MakeKeyDict(picasaFiles, exifGoogle, picasaExtractor);
+            
+            /*
+            if (1==1)
+            {
+                //Get different localfile keys
+                var exifLocal1 = MakeKeyDict(localFiles, localExtractor);
+                var exifGoogle1 = MakeKeyDict(googleFiles, googleExtractor);
+                var exifPicasa1 = MakeKeyDict(picasaFiles, exifGoogle, picasaExtractor);
+            }*/
 
             //Try matching by exif
             foreach (var pair in exifLocal)
@@ -274,7 +302,7 @@ namespace GooglePhotoOrganizer
         static object _diskReadLock = new Object();
 
         //Keydata for file
-        public static object GetExifImageDateOrMovieLength(string filePath)
+        public static object GetExifImageDate(string filePath)
         {
             lock (_diskReadLock)
             {
@@ -293,36 +321,69 @@ namespace GooglePhotoOrganizer
                                 fs.Close();
                                 return dateResult;
                             }
+                        } catch { }
+                    }
+                    fs.Close();
+                    return null;
+                }
+            }
+        }
+
+        
+        //Keydata for file
+        public static object GetImageSizeOrMovieLength(string filePath)
+        {
+            lock (_diskReadLock)
+            {
+                using (var fs = new System.IO.FileStream(filePath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+                {
+                    if (IsImage(fs))
+                    {
+                        try
+                        {
+
+                          
+                            using (Image tif = Image.FromStream(stream: fs,
+                                                                useEmbeddedColorManagement: false,
+                                                                validateImageData: false))
+                            {
+                                float width = tif.PhysicalDimension.Width;
+                                float height = tif.PhysicalDimension.Height;
+                                fs.Close();
+                                return width.ToString() + "&&" + height.ToString();
+                            }
+                            /*
+                            BitmapSource img = BitmapFrame.Create(fs);
                             //null date. Try width and height
                             if (img.Width != 0 && img.Height != 0) //Google usually transforms images more the 4000 pixels
                             {
                                 fs.Close();
                                 return img.Width.ToString() + "&&" + img.Height.ToString();
-                            }
-                            fs.Close();
-                            return null;
+                            }*/
+
+                        }
+                        catch {}
+                        fs.Close();
+                        return null;
+                    }
+                    else
+                    {
+                        fs.Close();
+
+                        try
+                        {
+                            var videoDuration = GetVideoDuration(filePath);
+                            return videoDuration;
                         }
                         catch
                         {
-                            fs.Close();
                             return null;
                         }
                     }
-                    else
-                        fs.Close();
-                }
-
-                try
-                {
-                    var videoDuration = GetVideoDuration(filePath);
-                    return videoDuration;
-                }
-                catch
-                {
-                    return null;
                 }
             }
         }
+
 
 
         public static DateTime? ExifDateToDateTime(string date)
@@ -359,34 +420,9 @@ namespace GooglePhotoOrganizer
             }
         }
 
-        
 
-
-
-        public static object GetExifImageDateOrMovieLength(PicasaEntry picasaEntry, bool useExif, Dictionary<object, List<object>> driveKeys)
+        public static object GetPicasaKeyByDriveKey(PicasaEntry picasaEntry, Dictionary<object, List<object>> driveKeys)
         {
-            /*
-            if (useExif)
-            {
-                if (((PicasaEntry)picasaEntry).Exif != null)
-                {
-                    if (picasaEntry.Exif.Time != null)
-                    {
-                        var timeStr = ((PicasaEntry)picasaEntry).Exif.Time.Value;
-                        long value;
-                        if (!String.IsNullOrWhiteSpace(timeStr) && Int64.TryParse(timeStr, out value))
-                        {
-                            var time = new DateTime(1970, 1, 1, 0, 0, 0);
-                            time = time.AddMilliseconds(value);
-                            return time.ToString();
-                        }
-                    }
-                }
-            }*/
-
-            //Picasa API do not have video metadata.
-            //Try to match video by size (size on google drive are the same as on picasa)
-
             //Make dictionary Size -> Keys from driveKeys
             var sizeToKeys = new Dictionary<string, List<object>>();
             foreach (var pair in driveKeys)
@@ -394,26 +430,76 @@ namespace GooglePhotoOrganizer
                 foreach (object googleObject in pair.Value)
                 {
                     var googleFile = (File)googleObject;
-                    long size = googleFile.FileSize.HasValue?googleFile.FileSize.Value:0;
+                    long size = googleFile.FileSize.HasValue ? googleFile.FileSize.Value : 0;
                     var sizeKey = size.ToString() + "&&" + googleFile.OriginalFilename;
                     if (!sizeToKeys.ContainsKey(sizeKey))
                         sizeToKeys.Add(sizeKey, new List<object>());
                     sizeToKeys[sizeKey].Add(pair.Key);
                 }
             }
-            
+
             //Get key by size
             PhotoAccessor photo = new PhotoAccessor(picasaEntry);
             var photoKey = photo.Size.ToString() + "&&" + photo.PhotoTitle;
 
             if (sizeToKeys.ContainsKey(photoKey) && sizeToKeys[photoKey].Count == 1)
                 return sizeToKeys[photoKey][0];
-            
             return null;
         }
+        
+        /*
+                public static object GetImageSizeOrMovieLength(PicasaEntry picasaEntry, bool useExif, Dictionary<object, List<object>> driveKeys)
+                {
+
+                    if (useExif)
+                    {
+                        if (((PicasaEntry)picasaEntry).Exif != null)
+                        {
+                            if (picasaEntry.Exif.Time != null)
+                            {
+                                var timeStr = ((PicasaEntry)picasaEntry).Exif.Time.Value;
+                                long value;
+                                if (!String.IsNullOrWhiteSpace(timeStr) && Int64.TryParse(timeStr, out value))
+                                {
+                                    var time = new DateTime(1970, 1, 1, 0, 0, 0);
+                                    time = time.AddMilliseconds(value);
+                                    return time.ToString();
+                                }
+                            }
+                        }
+                    }
+
+                    //Picasa API do not have video metadata.
+                    //Try to match video by size (size on google drive are the same as on picasa)
+
+                    //Make dictionary Size -> Keys from driveKeys
+                    var sizeToKeys = new Dictionary<string, List<object>>();
+                    foreach (var pair in driveKeys)
+                    {
+                        foreach (object googleObject in pair.Value)
+                        {
+                            var googleFile = (File)googleObject;
+                            long size = googleFile.FileSize.HasValue ? googleFile.FileSize.Value : 0;
+                            var sizeKey = size.ToString() + "&&" + googleFile.OriginalFilename;
+                            if (!sizeToKeys.ContainsKey(sizeKey))
+                                sizeToKeys.Add(sizeKey, new List<object>());
+                            sizeToKeys[sizeKey].Add(pair.Key);
+                        }
+                    }
+
+                    //Get key by size
+                    PhotoAccessor photo = new PhotoAccessor(picasaEntry);
+                    var photoKey = photo.Size.ToString() + "&&" + photo.PhotoTitle;
+
+                    if (sizeToKeys.ContainsKey(photoKey) && sizeToKeys[photoKey].Count == 1)
+                        return sizeToKeys[photoKey][0];
+
+                    return null;
+                }*/
 
 
-        public static object GetExifImageDateOrMovieLength(File googleFile)
+
+        public static object GetExifImageDate(File googleFile)
         {
             if (googleFile.ImageMediaMetadata != null)
             {
@@ -426,21 +512,31 @@ namespace GooglePhotoOrganizer
                     return ExifDateToDateTime(dateStr);
                 }
                 //No data. Will use size
+            }
+            return null;
+        }
+        
+
+        public static object GetImageSizeOrMovieLength(File googleFile)
+        {
+            if (googleFile.ImageMediaMetadata != null)
+            {
+                //No data. Will use size
                 var height = googleFile.ImageMediaMetadata.Height;
                 var width = googleFile.ImageMediaMetadata.Width;
 
                 if (width != null && height != null && width != 0 && height != 0 &&
                         width < 4000 && height < 4000) //Google usually transforms images more the 4000 pixels
                     return width.ToString() + "&&" + height.ToString();
-            }
-
-            if (googleFile.VideoMediaMetadata != null && ((File)googleFile).VideoMediaMetadata.DurationMillis != null)
+            } 
+            else if (googleFile.VideoMediaMetadata != null && ((File)googleFile).VideoMediaMetadata.DurationMillis != null)
             {
                 double duration = googleFile.VideoMediaMetadata.DurationMillis.Value / 1000.0;
                 return duration;
             }
             return null;
         }
+
 
 
         public static DateTime? GetMinDateKey(string filePath)

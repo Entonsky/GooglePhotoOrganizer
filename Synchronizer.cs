@@ -59,42 +59,58 @@ namespace GooglePhotoOrganizer
             _progressBar.Invoke(action);
         }
 
+
+        void GetAllNodesRecursive(TreeNode node, List<TreeNode> fillNodes)
+        {
+            foreach (TreeNode n in node.Nodes)
+                fillNodes.Add(n);
+        }
+
        
-        Dictionary<string, List<FileDesc>> GetFilesFromNodes(string pathRoot, List<TreeNode> nodes)
+        Dictionary<string, List<FileDesc>> GetFilesFromNodes(List<TreeNode> rootNodes)
         {
             var result = new Dictionary<string, List<FileDesc>>();
-            foreach (var node in nodes)
+
+            foreach (var rootNode in rootNodes)
             {
-                var directory = (string)node.Tag;
-
-                if (!System.IO.Directory.Exists(directory))
+                if (!System.IO.Directory.Exists(rootNode.Text))
                     continue;
-                //Files in folder according to node
-                var files = System.IO.Directory.GetFiles(directory);
 
-                var albumName = "Default";
-                var curNode = node;
-                while (curNode!= null && curNode.Parent != null)
+                var nodes = new List<TreeNode>();
+                GetAllNodesRecursive(rootNode, nodes);
+
+                foreach (var node in nodes)
                 {
-                    if (curNode.ForeColor!= Color.Gray)
+                    var directory = (string)node.Tag;
+
+                    if (!System.IO.Directory.Exists(directory))
+                        continue;
+                    //Files in folder according to node
+                    var files = System.IO.Directory.GetFiles(directory);
+
+                    var albumName = "Default";
+                    var curNode = node;
+                    while (curNode != null && curNode.Parent != null)
                     {
-                        albumName = curNode.Text;
-                        break;
+                        if (curNode.ForeColor != Color.Gray)
+                        {
+                            albumName = curNode.Text;
+                            break;
+                        }
+                        curNode = curNode.Parent;
                     }
-                    curNode = curNode.Parent;
-                }
 
-                foreach (var file in files)
-                {
-                    var fName = System.IO.Path.GetFileName(file);
-                    var relPath = FileWorker.GetRelativePathDirectory(file, pathRoot);
-                    if (!result.ContainsKey(fName))
-                        result.Add(fName, new List<FileDesc>());
-                    //Add filePath, 
-                    result[fName].Add(new FileDesc(file, relPath, albumName));
+                    foreach (var file in files)
+                    {
+                        var fName = System.IO.Path.GetFileName(file);
+                        var relPath = PathTreeWorker.GetRelativePathDirectory(file, rootNode.Text);
+                        if (!result.ContainsKey(fName))
+                            result.Add(fName, new List<FileDesc>());
+                        //Add filePath, 
+                        result[fName].Add(new FileDesc(file, relPath, albumName));
+                    }
                 }
             }
-
             return result;
         }
 
@@ -150,26 +166,29 @@ namespace GooglePhotoOrganizer
         
         private void MoveFile(string fileName, string drivePhotoDirId)
         {
-            //Try get picasa file by google file name        
-            foreach (var googleFile in googleFiles[fileName])
+            //Try get picasa file by google file name  
+            if (googleFiles.ContainsKey(fileName))
             {
-                //Add by 
-                var googleFileName = ((File)googleFile).OriginalFilename;
-                lock (picasaFiles)
+                foreach (var googleFile in googleFiles[fileName])
                 {
-                    if (!picasaFiles.ContainsKey(googleFileName))
+                    //Add by 
+                    var googleFileName = ((File)googleFile).OriginalFilename;
+                    lock (picasaFiles)
                     {
-                        var foundAlbums = new HashSet<string>();
-                        var picasaFoundFiles = picasa.GetPhotos(null, googleFileName);
-                        foreach (var file in picasaFoundFiles)
+                        if (!picasaFiles.ContainsKey(googleFileName))
                         {
-                            AddPicasaFile(file, picasaFiles, picasaFilesId);
-                            var picasaFoto = new PhotoAccessor(file);
-                            foundAlbums.Add(picasaFoto.AlbumId);
+                            var foundAlbums = new HashSet<string>();
+                            var picasaFoundFiles = picasa.GetPhotos(null, googleFileName);
+                            foreach (var file in picasaFoundFiles)
+                            {
+                                AddPicasaFile(file, picasaFiles, picasaFilesId);
+                                var picasaFoto = new PhotoAccessor(file);
+                                foundAlbums.Add(picasaFoto.AlbumId);
+                            }
+                            //Also try to add any files from album of found files
+                            foreach (var albumId in foundAlbums)
+                                AddPicasaFiles(picasa, picasaFiles, picasaFilesId, albumId);
                         }
-                        //Also try to add any files from album of found files
-                        foreach (var albumId in foundAlbums)
-                            AddPicasaFiles(picasa, picasaFiles, picasaFilesId, albumId);
                     }
                 }
             }
@@ -378,29 +397,28 @@ namespace GooglePhotoOrganizer
 
 
 
+        HashSet<string> videoExt = new HashSet<string>() { ".mp4", ".flv", ".mov", ".mpg", ".mod", ".avi"};
 
 
-
-        public void Organize(string pathRoot, List<TreeNode> nodes, string drivePhotoDirId, bool driveOrg = true, bool albumOrg = true, bool useDateTag = true)
+        public void Organize(List<TreeNode> rootNodes, string drivePhotoDirId, bool driveOrg = true, bool albumOrg = true, bool useDateTag = true)
         {
-            if (!System.IO.Directory.Exists(pathRoot))
-                return;
-            
-            GoogleDriveClient drive = null;
-            if (driveOrg)
-                drive = new GoogleDriveClient();
-            PicasaClient picasa = null;
-            if (albumOrg)
-                picasa = new PicasaClient();
-            
-            LogText("Search for files in '" + pathRoot+"'");
-            localFiles = GetFilesFromNodes(pathRoot, nodes);
+            LogText("Search for files on local drive");
+            localFiles = GetFilesFromNodes(rootNodes);
             if (localFiles.Count ==0)
             {
                 LogText("No files found");
                 return;
             }
 
+            GoogleDriveClient drive = null;
+            if (driveOrg)
+                drive = new GoogleDriveClient();
+            PicasaClient picasa = null;
+            if (albumOrg)
+                picasa = new PicasaClient();
+
+            var filesForMoving = new HashSet<string>();
+            
             LogText("Search for files already in Google Photos directory on Google Drive. It can take a long time...");
             var googleFilesLst = drive.GetFiles(null, drivePhotoDirId);
             googleFiles = new Dictionary<string, List<File>>();
@@ -417,7 +435,10 @@ namespace GooglePhotoOrganizer
             }
             else
                 LogText("Found " + googleFilesLst.Count + " files");
-            
+                
+            filesForMoving.UnionWith(googleFiles.Keys);
+
+            //Search for picassa files 
             LogText("Search for exist photo albums");
             var picasaAlbumsLst = picasa.GetAlbums();
             //Album by name 
@@ -429,21 +450,48 @@ namespace GooglePhotoOrganizer
             }
             LogText("Found " + picasaAlbumsLst.Count + " albums");
 
-
+            
             picasaFiles = new Dictionary<string, List<PicasaEntry>>();
             picasaFilesId = new HashSet<string>();
             googleDirs = new Dictionary<string, string>();
             preferableDirs = new Dictionary<string, Tuple<string, string>>();
 
+
+            /*
+            LogText("Search for media files in Picasa api");
+            var alreadyFoundExt = new HashSet<string>();
+            
+            foreach (var localFile in localFiles.Keys)
+            {
+                var ext = System.IO.Path.GetExtension(localFile).ToLower();
+                if (alreadyFoundExt.Contains(ext) || !videoExt.Contains(ext))
+                    continue;
+                alreadyFoundExt.Add(ext);
+                var foundAlbums = new HashSet<string>();
+                var picasaFoundFiles = picasa.GetPhotos(null, ext);
+                foreach (var file in picasaFoundFiles)
+                {
+                    AddPicasaFile(file, picasaFiles, picasaFilesId);
+                    var picasaFoto = new PhotoAccessor(file);
+                    foundAlbums.Add(picasaFoto.AlbumId);
+                }
+                //Also try to add any files from album of found files
+                foreach (var albumId in foundAlbums)
+                    AddPicasaFiles(picasa, picasaFiles, picasaFilesId, albumId);
+            }
+            LogText("Found " + picasaFiles.Count + " files");*/
+
+            filesForMoving.UnionWith(picasaFiles.Keys);
+
             LogText("MOVING FILES...");
-            ResetProgress(googleFiles.Count);
+            ResetProgress(filesForMoving.Count);
             bool hasError = false;
 
-            var opt = new ParallelOptions() { MaxDegreeOfParallelism = 5 };
+            var opt = new ParallelOptions() { MaxDegreeOfParallelism = 10 };
             //foreach (var googleFilePair in googleFiles)
-            Parallel.ForEach(googleFiles, opt, (googleFilePair) =>
+            Parallel.ForEach(filesForMoving, opt, (googleFilePair) =>
             {
-                if (!localFiles.ContainsKey(googleFilePair.Key))
+                if (!localFiles.ContainsKey(googleFilePair))
                 {
                     IncreaseProgress();
                     return;
@@ -456,7 +504,7 @@ namespace GooglePhotoOrganizer
                 {
                     try
                     {
-                        MoveFile(googleFilePair.Key, drivePhotoDirId);
+                        MoveFile(googleFilePair, drivePhotoDirId);
                         if (i != 0)
                             LogText("Try succeeded.");
                         break;
@@ -464,7 +512,7 @@ namespace GooglePhotoOrganizer
                     catch (Exception ex)
                     {
                         if (i < 2)
-                            LogText("Error moving " + googleFilePair.Key + ". Try again...");
+                            LogText("Error moving " + googleFilePair + ". Try again...");
                         else
                         {
                             hasError = true;
