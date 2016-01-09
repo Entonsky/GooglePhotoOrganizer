@@ -62,8 +62,13 @@ namespace GooglePhotoOrganizer
 
         void GetAllNodesRecursive(TreeNode node, List<TreeNode> fillNodes)
         {
+            fillNodes.Add(node);
+            if (node.Nodes == null || node.Nodes.Count == 0)
+                return;
             foreach (TreeNode n in node.Nodes)
-                fillNodes.Add(n);
+            {
+                GetAllNodesRecursive(n, fillNodes);
+            }
         }
 
        
@@ -377,7 +382,7 @@ namespace GooglePhotoOrganizer
                         if (!hasSameParent) //If not already in this folder
                             drive.MoveFileToDirectory(googleFile.Id, googleDirId);
 
-                        
+                        /*
                         if (googleFile.ImageMediaMetadata == null || String.IsNullOrWhiteSpace(googleFile.ImageMediaMetadata.Date))
                         {
                             //No Exif date for file.
@@ -388,7 +393,7 @@ namespace GooglePhotoOrganizer
                                 creationDate = fi.LastWriteTime;
                             if (googleFile.CreatedDate > creationDate)
                                 drive.SetCreationDate(googleFile.Id, creationDate);
-                        }
+                        }*/
 
                     }
                 }
@@ -424,6 +429,8 @@ namespace GooglePhotoOrganizer
             googleFiles = new Dictionary<string, List<File>>();
             foreach (var file in googleFilesLst)
             {
+                //Do not need trash files here
+                //var x = file.ExplicitlyTrashed;
                 if (!googleFiles.ContainsKey(file.OriginalFilename))
                     googleFiles.Add(file.OriginalFilename, new List<File>());
                 googleFiles[file.OriginalFilename].Add(file);
@@ -481,7 +488,9 @@ namespace GooglePhotoOrganizer
             }
             LogText("Found " + picasaFiles.Count + " files");*/
 
-            filesForMoving.UnionWith(picasaFiles.Keys);
+            //filesForMoving.UnionWith(picasaFiles.Keys);
+
+            //System.IO.File.WriteAllLines("localFiles", localFiles.Keys.ToList());
 
             LogText("MOVING FILES...");
             ResetProgress(filesForMoving.Count);
@@ -512,7 +521,19 @@ namespace GooglePhotoOrganizer
                     catch (Exception ex)
                     {
                         if (i < 2)
+                        {
                             LogText("Error moving " + googleFilePair + ". Try again...");
+                            if (i==1)
+                            {
+                                lock (picasaFiles)
+                                {
+                                    //Sometimes picassa and all already found files creditals coul be expired
+                                    //Will delete them all and reinit as usual.
+                                    picasaFiles.Clear();
+                                    picasaFilesId.Clear();
+                                }
+                            }
+                        }
                         else
                         {
                             hasError = true;

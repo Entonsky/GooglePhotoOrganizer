@@ -55,8 +55,8 @@ namespace GooglePhotoOrganizer
 
         static GetGooglePhotosFolder _thisForm;
         static string _googlePhotoFolderId = null;
-
-        public static string GetGooglePhotoFolderId()
+        
+        public static string GetGooglePhotoFolderId(Action<string> logText = null)
         {
             if (_googlePhotoFolderId != null)
                 return _googlePhotoFolderId;
@@ -73,13 +73,25 @@ namespace GooglePhotoOrganizer
             {
                 try
                 {
+                    if (logText != null)
+                    {
+                        logText("Login on google.");
+                        if (!Directory.Exists(GoogleDriveClient.CredPath))
+                            logText("New browser window will appear. You should click accept for work with app.");
+                    }
                     var google = new GoogleDriveClient();
+                    if (logText != null)
+                        logText("Login Ok.");
                     foreach (var sg in sugestionNames)
                     {
                         photoFolders = google.GetDirectories(sg, "root");
                         if (photoFolders.Count > 0)
                             break;
                     }
+                }
+                catch (System.Threading.ThreadAbortException ex)
+                {
+                    return null;
                 }
                 catch (Exception ex)
                 {

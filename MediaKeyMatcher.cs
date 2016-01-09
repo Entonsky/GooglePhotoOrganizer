@@ -77,7 +77,24 @@ namespace GooglePhotoOrganizer
                 {
                     return MediaKeyMatcher.GetPicasaKeyByDriveKey((PicasaEntry)file, exifGoogle);
                 });
-            
+
+
+            //Match by exif date in local file and creation date in google file
+            MatchFilesWithTheSameNameByType(result,
+                localNotMatched, googleNotMatched, picasaNotMatched,
+                (object file) =>
+                {
+                    return MediaKeyMatcher.GetExifImageDate(((FileDesc)file).path);
+                },
+                (object file) =>
+                {
+                    return MediaKeyMatcher.GetMinDateKey((File)file);
+                },
+                (object file, Dictionary<object, List<object>> exifGoogle) =>
+                {
+                    return MediaKeyMatcher.GetPicasaKeyByDriveKey((PicasaEntry)file, exifGoogle);
+                });
+
             //match by creationDate
             MatchFilesWithTheSameNameByType(result,
                 localNotMatched, googleNotMatched, picasaNotMatched,
@@ -112,6 +129,7 @@ namespace GooglePhotoOrganizer
                 });
 
 
+            
             if (localNotMatched.Count>0 || googleNotMatched.Count>0 || picasaNotMatched.Count>0)
             {
                 var defaultKey = "Default";
@@ -321,7 +339,10 @@ namespace GooglePhotoOrganizer
                                 fs.Close();
                                 return dateResult;
                             }
-                        } catch { }
+                        } catch
+                        {
+                            IsImage(fs);
+                        }
                     }
                     fs.Close();
                     return null;
@@ -506,10 +527,13 @@ namespace GooglePhotoOrganizer
                 if (!String.IsNullOrWhiteSpace(googleFile.ImageMediaMetadata.Date) && googleFile.ImageMediaMetadata.Date!="0000:00:00 00:00:00")
                 {
                     var dateStr = googleFile.ImageMediaMetadata.Date;
+                    
                     var sp = dateStr.Split(':');
-                    if (sp.Length != 5)
+                    var result = ExifDateToDateTime(dateStr);
+
+                    if (result == null)
                         throw new Exception("Wrong google date '" + dateStr + "'"); //Wrong exif format
-                    return ExifDateToDateTime(dateStr);
+                    return result;
                 }
                 //No data. Will use size
             }
@@ -620,25 +644,26 @@ namespace GooglePhotoOrganizer
                 return isImage;
             }
         }
-        
+
+        const string jpg = "FFD8";
+        const string bmp = "424D";
+        const string gif = "474946";
+        const string png = "89504E470D0A1A0A";
+
         private static bool IsImage(System.IO.FileStream stream)
         {
             stream.Seek(0, System.IO.SeekOrigin.Begin);
+            
+            var imgTypes = new HashSet<string> { jpg, bmp, gif, png };
 
-            List<string> jpg = new List<string> { "FF", "D8" };
-            List<string> bmp = new List<string> { "42", "4D" };
-            List<string> gif = new List<string> { "47", "49", "46" };
-            List<string> png = new List<string> { "89", "50", "4E", "47", "0D", "0A", "1A", "0A" };
-            List<List<string>> imgTypes = new List<List<string>> { jpg, bmp, gif, png };
-
-            List<string> bytesIterated = new List<string>();
+            string bytesIterated = "";
 
             for (int i = 0; i < 8; i++)
             {
                 string bit = stream.ReadByte().ToString("X2");
-                bytesIterated.Add(bit);
+                bytesIterated += bit;
 
-                bool isImage = imgTypes.Any(img => !img.Except(bytesIterated).Any());
+                bool isImage = imgTypes.Contains(bytesIterated);
                 if (isImage)
                 {
                     stream.Seek(0, System.IO.SeekOrigin.Begin);

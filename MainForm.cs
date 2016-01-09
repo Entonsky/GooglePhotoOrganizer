@@ -105,22 +105,35 @@ namespace GooglePhotoOrganizer
         List<TreeNode> _nodes = null;
 
 
+        private void LogText(string text)
+        {
+            Action action = delegate () { richTextBoxLog.AppendText(text + "\r\n"); richTextBoxLog.ScrollToCaret(); };
+            richTextBoxLog.Invoke(action);
+        }
+
+
         private void MainForm_Shown(object sender, EventArgs e)
         {
             if (!alreadyShown)
             {
                 alreadyShown = true;
-                if (String.IsNullOrWhiteSpace(GetGooglePhotosFolder.GetGooglePhotoFolderId()))
+                string photoId = null;
+                if (!RunAction(() => 
+                {
+                    photoId = GetGooglePhotosFolder.GetGooglePhotoFolderId(LogText);
+                }))
+
+                if (String.IsNullOrWhiteSpace(photoId))
                 {
                     MessageBox.Show("Can't open google photos folder.");
                     this.Close();
-                }
-                else
-                {
-                    _nodes = PathTreeWorker.LoadTreeView(treeViewDirectories);
+                    return;
                 }
 
-
+                LogText("Seek for folders on local drive...");
+                Application.DoEvents();
+                _nodes = PathTreeWorker.LoadTreeView(treeViewDirectories);
+                LogText("Ready.");
             }
 
         }
@@ -237,6 +250,8 @@ namespace GooglePhotoOrganizer
                 return;
             }
 
+            deleteFolderToolStripMenuItem.Visible = treeViewDirectories.SelectedNode.Parent == null;
+            
             bool visible = true;
             if (treeViewDirectories.SelectedNode.ForeColor == Color.Gray)
                 visible = false;
@@ -385,6 +400,33 @@ namespace GooglePhotoOrganizer
         {
             treeViewDirectories.Nodes.Clear();
             PathTreeWorker.SaveTreeView(treeViewDirectories, false);
+        }
+
+        private void deleteFolderToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (!treeViewDirectories.Enabled || treeViewDirectories.SelectedNode == null)
+                return;
+
+            if (treeViewDirectories.SelectedNode.Parent!=null)
+            {
+                MessageBox.Show("Can delete only root nodes");
+                return;
+            }
+
+            treeViewDirectories.SelectedNode.Remove();
+        }
+
+        private void buttonLogOut_Click(object sender, EventArgs e)
+        {
+            if (Directory.Exists(GoogleDriveClient.CredPath))
+            {
+                Directory.Delete(GoogleDriveClient.CredPath, true);
+                MessageBox.Show("Application will be closed. Start it again to select new google account.");
+                this.Close();
+            }
+            {
+                MessageBox.Show("Could not found '"+ GoogleDriveClient.CredPath+"' directory. Already logout?");
+            }
         }
     }
     

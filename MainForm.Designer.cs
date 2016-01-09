@@ -33,6 +33,9 @@
             this.richTextBoxLog = new System.Windows.Forms.RichTextBox();
             this.treeViewDirectories = new System.Windows.Forms.TreeView();
             this.contextMenuStripTree = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.addFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.deleteFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
             this.doNotMakeAlbumWithFolderNameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.doNotMakeAlbumsWithSubFolderNamesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.makeAlbumWithFolderNameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -48,6 +51,7 @@
             this.folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
             this.button1 = new System.Windows.Forms.Button();
             this.buttonClear = new System.Windows.Forms.Button();
+            this.buttonLogOut = new System.Windows.Forms.Button();
             this.contextMenuStripTree.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -79,13 +83,35 @@
             // contextMenuStripTree
             // 
             this.contextMenuStripTree.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.addFolderToolStripMenuItem,
+            this.deleteFolderToolStripMenuItem,
+            this.toolStripMenuItem1,
             this.doNotMakeAlbumWithFolderNameToolStripMenuItem,
             this.doNotMakeAlbumsWithSubFolderNamesToolStripMenuItem,
             this.makeAlbumWithFolderNameToolStripMenuItem,
             this.makeAlbumsWithSubfolderNamesToolStripMenuItem});
             this.contextMenuStripTree.Name = "contextMenuStripTree";
-            this.contextMenuStripTree.Size = new System.Drawing.Size(462, 92);
+            this.contextMenuStripTree.Size = new System.Drawing.Size(462, 142);
             this.contextMenuStripTree.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStripTree_Opening);
+            // 
+            // addFolderToolStripMenuItem
+            // 
+            this.addFolderToolStripMenuItem.Name = "addFolderToolStripMenuItem";
+            this.addFolderToolStripMenuItem.Size = new System.Drawing.Size(461, 22);
+            this.addFolderToolStripMenuItem.Text = "Add root folder";
+            this.addFolderToolStripMenuItem.Click += new System.EventHandler(this.buttonGetDirectories_Click);
+            // 
+            // deleteFolderToolStripMenuItem
+            // 
+            this.deleteFolderToolStripMenuItem.Name = "deleteFolderToolStripMenuItem";
+            this.deleteFolderToolStripMenuItem.Size = new System.Drawing.Size(461, 22);
+            this.deleteFolderToolStripMenuItem.Text = "Delete root folder";
+            this.deleteFolderToolStripMenuItem.Click += new System.EventHandler(this.deleteFolderToolStripMenuItem_Click);
+            // 
+            // toolStripMenuItem1
+            // 
+            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(458, 6);
             // 
             // doNotMakeAlbumWithFolderNameToolStripMenuItem
             // 
@@ -124,9 +150,9 @@
             this.buttonAddDirectory.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonAddDirectory.Location = new System.Drawing.Point(6, 7);
             this.buttonAddDirectory.Name = "buttonAddDirectory";
-            this.buttonAddDirectory.Size = new System.Drawing.Size(64, 23);
+            this.buttonAddDirectory.Size = new System.Drawing.Size(75, 23);
             this.buttonAddDirectory.TabIndex = 6;
-            this.buttonAddDirectory.Text = "Add Dir";
+            this.buttonAddDirectory.Text = "Add Folder";
             this.buttonAddDirectory.UseVisualStyleBackColor = true;
             this.buttonAddDirectory.Click += new System.EventHandler(this.buttonGetDirectories_Click);
             // 
@@ -213,23 +239,36 @@
             this.button1.TabIndex = 15;
             this.button1.Text = "button1";
             this.button1.UseVisualStyleBackColor = true;
+            this.button1.Visible = false;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // buttonClear
             // 
-            this.buttonClear.Location = new System.Drawing.Point(92, 7);
+            this.buttonClear.Location = new System.Drawing.Point(86, 7);
             this.buttonClear.Name = "buttonClear";
-            this.buttonClear.Size = new System.Drawing.Size(49, 23);
+            this.buttonClear.Size = new System.Drawing.Size(84, 23);
             this.buttonClear.TabIndex = 16;
-            this.buttonClear.Text = "Clear";
+            this.buttonClear.Text = "Clear Folders";
             this.buttonClear.UseVisualStyleBackColor = true;
             this.buttonClear.Click += new System.EventHandler(this.buttonClear_Click);
+            // 
+            // buttonLogOut
+            // 
+            this.buttonLogOut.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonLogOut.Location = new System.Drawing.Point(390, 7);
+            this.buttonLogOut.Name = "buttonLogOut";
+            this.buttonLogOut.Size = new System.Drawing.Size(75, 23);
+            this.buttonLogOut.TabIndex = 17;
+            this.buttonLogOut.Text = "Logout";
+            this.buttonLogOut.UseVisualStyleBackColor = true;
+            this.buttonLogOut.Click += new System.EventHandler(this.buttonLogOut_Click);
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(470, 519);
+            this.Controls.Add(this.buttonLogOut);
             this.Controls.Add(this.buttonClear);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.buttonDeleteAllPicasa);
@@ -246,7 +285,6 @@
             this.Name = "MainForm";
             this.Text = "Google Photos Organizer";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
-            this.Load += new System.EventHandler(this.MainForm_Load);
             this.Shown += new System.EventHandler(this.MainForm_Shown);
             this.contextMenuStripTree.ResumeLayout(false);
             this.ResumeLayout(false);
@@ -273,6 +311,10 @@
         private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Button buttonClear;
+        private System.Windows.Forms.ToolStripMenuItem addFolderToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem deleteFolderToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
+        private System.Windows.Forms.Button buttonLogOut;
     }
 }
 

@@ -47,30 +47,29 @@ namespace GooglePhotoOrganizer
         };
 
         DriveService _driveService = null;
-
-
+              
+        public static string CredPath
+        {
+            get
+            {
+                var result = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
+                result = System.IO.Path.Combine(result, ".credentials\\drive-dotnet-quickstart");
+                return result;
+            }
+        }
+        
         public static UserCredential GetCreditals()
         {
             UserCredential credential;
-
-            string credPath = System.Environment.GetFolderPath(
-                    System.Environment.SpecialFolder.Personal);
             using (var stream =
                 new System.IO.FileStream("client_secret.json", System.IO.FileMode.Open, System.IO.FileAccess.Read))
             {
-
-                credPath = System.IO.Path.Combine(credPath, ".credentials\\drive-dotnet-quickstart");
-                /*if (System.IO.Directory.Exists(credPath))
-                {
-                    System.IO.Directory.Delete(credPath);
-                }*/
-
                 credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
                     GoogleClientSecrets.Load(stream).Secrets,
                     Scopes,
                     "user",
                     System.Threading.CancellationToken.None,
-                    new FileDataStore(credPath, true)).Result;
+                    new FileDataStore(CredPath, true)).Result;
                 //_creditalFile = credPath;
             }
             return credential;
