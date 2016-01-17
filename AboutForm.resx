@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="label2.Text" xml:space="preserve">
-    <value>This is opensource google photo organizer prorgam.
+    <value>This is opensource google photo organizer program.
 
 It can organize you google photos on your google drive
 according to file structure on your disk.

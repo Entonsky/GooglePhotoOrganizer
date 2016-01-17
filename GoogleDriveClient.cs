@@ -238,8 +238,13 @@ namespace GooglePhotoOrganizer
         {
             File file = new File();
             file.CreatedDate = createdDate;
-            FilesResource.PatchRequest request = GetDriveService().Files.Patch(file, fileId);
+            //FilesResource.PatchRequest request = GetDriveService().Files.Patch(file, fileId);
+
+            var request =  GetDriveService().Files.Update(file, fileId);
+
             return request.Execute();
+
+           
         }
 
 

@@ -428,6 +428,35 @@ namespace GooglePhotoOrganizer
                 MessageBox.Show("Could not found '"+ GoogleDriveClient.CredPath+"' directory. Already logout?");
             }
         }
+
+        private void buttonFixVideoTime_Click(object sender, EventArgs e)
+        {
+            //This did not work, because cant change creation date
+            var drivePhotoDirId = GetGooglePhotosFolder.GetGooglePhotoFolderId();
+            if (String.IsNullOrWhiteSpace(drivePhotoDirId))
+            {
+                return;
+            }
+
+            richTextBoxLog.Clear();
+            var syncronizer = new Synchronizer(progressBar, richTextBoxLog);
+
+            //syncronizer.Organize(textBoxLocalPath.Text, _nodes, drivePhotoDirId, diskOrg, albumnOrg);
+            try
+            {
+                var rootNodes = new List<TreeNode>();
+                foreach (TreeNode node in treeViewDirectories.Nodes)
+                    rootNodes.Add(node);
+
+                if (!RunAction(() => { syncronizer.FixVideoDates(rootNodes, drivePhotoDirId); }))
+                    return;
+            }
+            catch (Exception ex)
+            {
+                richTextBoxLog.AppendText("Error. Check for internet connection. If problem still exists with internet connection, send question to author.\r\n" + ex.ToString());
+                richTextBoxLog.ScrollToCaret();
+            }
+        }
     }
     
 }

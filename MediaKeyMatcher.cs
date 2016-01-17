@@ -54,62 +54,65 @@ namespace GooglePhotoOrganizer
         }
 
 
-        public static List<MatchedFiles> MatchFilesWithTheSameName(List<FileDesc> localFiles, List<File> googleFiles, List<PicasaEntry> picasaFiles)
+        public static List<MatchedFiles> MatchFilesWithTheSameName(List<FileDesc> localFiles, List<File> googleFiles, List<PicasaEntry> picasaFiles = null, bool videoMatchOnly = false)
         {
             var result = new Dictionary<object, MatchedFiles>();
 
             var localNotMatched = new HashSet<FileDesc>(localFiles);
             var googleNotMatched = new HashSet<File>(googleFiles);
-            var picasaNotMatched = new HashSet<PicasaEntry>(picasaFiles);
+            var picasaNotMatched = picasaFiles != null?new HashSet<PicasaEntry>(picasaFiles) : new HashSet<PicasaEntry>();
 
-            //Match by exif date
-            MatchFilesWithTheSameNameByType(result,
-                localNotMatched, googleNotMatched, picasaNotMatched,
-                (object file) =>
-                {
-                    return MediaKeyMatcher.GetExifImageDate(((FileDesc)file).path);
-                },
-                (object file) =>
-                {
-                    return MediaKeyMatcher.GetExifImageDate((File)file);
-                },
-                (object file, Dictionary<object, List<object>> exifGoogle) =>
-                {
-                    return MediaKeyMatcher.GetPicasaKeyByDriveKey((PicasaEntry)file, exifGoogle);
-                });
+            if (!videoMatchOnly)
+            {
+                //Match by exif date
+                MatchFilesWithTheSameNameByType(result,
+                    localNotMatched, googleNotMatched, picasaNotMatched,
+                    (object file) =>
+                    {
+                        return MediaKeyMatcher.GetExifImageDate(((FileDesc)file).path);
+                    },
+                    (object file) =>
+                    {
+                        return MediaKeyMatcher.GetExifImageDate((File)file);
+                    },
+                    (object file, Dictionary<object, List<object>> exifGoogle) =>
+                    {
+                        return MediaKeyMatcher.GetPicasaKeyByDriveKey((PicasaEntry)file, exifGoogle);
+                    });
 
 
-            //Match by exif date in local file and creation date in google file
-            MatchFilesWithTheSameNameByType(result,
-                localNotMatched, googleNotMatched, picasaNotMatched,
-                (object file) =>
-                {
-                    return MediaKeyMatcher.GetExifImageDate(((FileDesc)file).path);
-                },
-                (object file) =>
-                {
-                    return MediaKeyMatcher.GetMinDateKey((File)file);
-                },
-                (object file, Dictionary<object, List<object>> exifGoogle) =>
-                {
-                    return MediaKeyMatcher.GetPicasaKeyByDriveKey((PicasaEntry)file, exifGoogle);
-                });
+                //Match by exif date in local file and creation date in google file
+                MatchFilesWithTheSameNameByType(result,
+                    localNotMatched, googleNotMatched, picasaNotMatched,
+                    (object file) =>
+                    {
+                        return MediaKeyMatcher.GetExifImageDate(((FileDesc)file).path);
+                    },
+                    (object file) =>
+                    {
+                        return MediaKeyMatcher.GetMinDateKey((File)file);
+                    },
+                    (object file, Dictionary<object, List<object>> exifGoogle) =>
+                    {
+                        return MediaKeyMatcher.GetPicasaKeyByDriveKey((PicasaEntry)file, exifGoogle);
+                    });
 
-            //match by creationDate
-            MatchFilesWithTheSameNameByType(result,
-                localNotMatched, googleNotMatched, picasaNotMatched,
-                (object file) =>
-                {
-                    return MediaKeyMatcher.GetMinDateKey(((FileDesc)file).path);
-                },
-                (object file) =>
-                {
-                    return MediaKeyMatcher.GetMinDateKey((File)file);
-                },
-                (object file, Dictionary<object, List<object>> exifGoogle) =>
-                {
-                    return MediaKeyMatcher.GetPicasaKeyByDriveKey((PicasaEntry)file, exifGoogle);
-                });
+                //match by creationDate
+                MatchFilesWithTheSameNameByType(result,
+                    localNotMatched, googleNotMatched, picasaNotMatched,
+                    (object file) =>
+                    {
+                        return MediaKeyMatcher.GetMinDateKey(((FileDesc)file).path);
+                    },
+                    (object file) =>
+                    {
+                        return MediaKeyMatcher.GetMinDateKey((File)file);
+                    },
+                    (object file, Dictionary<object, List<object>> exifGoogle) =>
+                    {
+                        return MediaKeyMatcher.GetPicasaKeyByDriveKey((PicasaEntry)file, exifGoogle);
+                    });
+            }
 
 
             //Match by image Size or movielength
@@ -129,18 +132,20 @@ namespace GooglePhotoOrganizer
                 });
 
 
-            
-            if (localNotMatched.Count>0 || googleNotMatched.Count>0 || picasaNotMatched.Count>0)
+            if (!videoMatchOnly)
             {
-                var defaultKey = "Default";
-                if (!result.ContainsKey(defaultKey))
-                    result.Add(defaultKey, new MatchedFiles());
-                foreach (FileDesc fileDesc in localNotMatched)
-                    result[defaultKey].localFiles.Add(fileDesc);
-                foreach (File file in googleNotMatched)
-                    result[defaultKey].googleFiles.Add(file);
-                foreach (PicasaEntry file in picasaNotMatched)
-                    result[defaultKey].picasaFiles.Add(file);
+                if (localNotMatched.Count > 0 || googleNotMatched.Count > 0 || picasaNotMatched.Count > 0)
+                {
+                    var defaultKey = "Default";
+                    if (!result.ContainsKey(defaultKey))
+                        result.Add(defaultKey, new MatchedFiles());
+                    foreach (FileDesc fileDesc in localNotMatched)
+                        result[defaultKey].localFiles.Add(fileDesc);
+                    foreach (File file in googleNotMatched)
+                        result[defaultKey].googleFiles.Add(file);
+                    foreach (PicasaEntry file in picasaNotMatched)
+                        result[defaultKey].picasaFiles.Add(file);
+                }
             }
 
             return result.Values.ToList();

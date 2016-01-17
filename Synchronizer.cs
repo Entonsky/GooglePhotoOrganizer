@@ -169,6 +169,181 @@ namespace GooglePhotoOrganizer
         }
 
         
+        private void FixVideoFile(string fileName, string drivePhotoDirId)
+        {
+            //Try get google file name  
+            if (!googleFiles.ContainsKey(fileName))
+                return;
+            
+            if (!localFiles.ContainsKey(fileName))
+                return;
+
+            var googleFilesSelect = googleFiles[fileName];
+            
+            //Match file by Data
+            var matchedFiles = MediaKeyMatcher.MatchFilesWithTheSameName(localFiles[fileName], googleFilesSelect, null, true);
+            
+            
+            foreach (var matched in matchedFiles)
+            {
+                //No such files on google storage
+                if (matched.googleFiles.Count==0)
+                    continue;
+
+                //No such file on local storage
+                if (matched.localFiles.Count == 0)
+                    continue;
+                
+                //*****************************************
+                //Select local file to get folder structure
+                FileDesc localFile;
+                if (matched.localFiles.Count > 1)
+                {
+                    var localFilesSizes = new HashSet<long>();
+                    //Get local files size
+                    foreach (var file in matched.localFiles)
+                        localFilesSizes.Add(MediaKeyMatcher.GetFileSize(file.path));
+
+                    if (localFilesSizes.Count>1)
+                    {
+                        //Can't distinguish this files
+                        LogText("Different local files with the same name. Skipping tham:");
+                        foreach (FileDesc file in matched.localFiles)
+                            LogText("   " + file.path);
+                        continue;
+                    }
+                    localFile = matched.localFiles[0];
+                }
+                else
+                {
+                    //One file
+                    localFile = matched.localFiles[0];
+                }
+                //*****************************************
+
+                //Move files to google dirs
+                foreach (File googleFile in matched.googleFiles)
+                {
+                    if (googleFile.VideoMediaMetadata == null)
+                        continue;
+                    //No Exif date for file.
+                    //Will change google CreationDate if its bigger then fileDate
+                    var creationDate = System.IO.File.GetCreationTime(localFile.path);
+                    var fi = new System.IO.FileInfo(localFile.path);
+                    if (creationDate > fi.LastWriteTime) //Get min among creation and modified date
+                        creationDate = fi.LastWriteTime;
+                    if (googleFile.CreatedDate > creationDate.AddDays(-1))
+                        drive.SetCreationDate(googleFile.Id, creationDate);
+                }
+                
+            }
+        }
+
+        
+
+
+        HashSet<string> videoExt = new HashSet<string>() { ".mp4", ".flv", ".mov", ".mpg", ".mod", ".avi"};
+
+        public void FixVideoDates(List<TreeNode> rootNodes, string drivePhotoDirId)
+        {
+            LogText("Search for files on local drive");
+            localFiles = GetFilesFromNodes(rootNodes);
+            if (localFiles.Count == 0)
+            {
+                LogText("No files found");
+                return;
+            }
+
+            GoogleDriveClient drive = new GoogleDriveClient();
+            
+            var filesForFixing = new HashSet<string>();
+
+            LogText("Search for files already in Google Photos directory on Google Drive. It can take a long time...");
+            var googleFilesLst = drive.GetFiles(null, drivePhotoDirId);
+            googleFiles = new Dictionary<string, List<File>>();
+            int hasVideoFiles = 0;
+            foreach (var file in googleFilesLst)
+            {
+                if (!videoExt.Contains("."+file.FileExtension.ToLower()))
+                    continue;
+                //Do not need trash files here
+                //var x = file.ExplicitlyTrashed;
+                if (!googleFiles.ContainsKey(file.OriginalFilename))
+                    googleFiles.Add(file.OriginalFilename, new List<File>());
+                googleFiles[file.OriginalFilename].Add(file);
+                hasVideoFiles++;
+            }
+            if (hasVideoFiles == 0)
+            {
+                LogText("No video files found");
+                return;
+            }
+            else
+                LogText("Found " + hasVideoFiles + " video files");
+
+            filesForFixing.UnionWith(googleFiles.Keys);
+            
+            //filesForMoving.UnionWith(picasaFiles.Keys);
+
+            //System.IO.File.WriteAllLines("localFiles", localFiles.Keys.ToList());
+
+            LogText("FIXING VIDEO TIME..");
+            ResetProgress(filesForFixing.Count);
+            bool hasError = false;
+
+            var opt = new ParallelOptions() { MaxDegreeOfParallelism = 1 };
+            //foreach (var googleFilePair in googleFiles)
+            Parallel.ForEach(filesForFixing, opt, (googleFilePair) =>
+            {
+                if (!localFiles.ContainsKey(googleFilePair))
+                {
+                    IncreaseProgress();
+                    return;
+                }
+
+                if (hasError)
+                    return;
+
+                for (int i = 0; i < 3; i++)
+                {
+                    try
+                    {
+                        FixVideoFile(googleFilePair, drivePhotoDirId);
+                        if (i != 0)
+                            LogText("Try succeeded.");
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        if (i < 2)
+                        {
+                            LogText("Error fixing " + googleFilePair + ". Try again...");
+                            if (i == 1)
+                            {
+                                lock (picasaFiles)
+                                {
+                                    //Sometimes picassa and all already found files creditals coul be expired
+                                    //Will delete them all and reinit as usual.
+                                    picasaFiles.Clear();
+                                    picasaFilesId.Clear();
+                                }
+                            }
+                        }
+                        else
+                        {
+                            hasError = true;
+                            throw ex;
+                        }
+                    }
+                }
+                IncreaseProgress();
+            });
+            LogText("\r\nREADY");
+            ResetProgress(100);
+        }
+
+
+
         private void MoveFile(string fileName, string drivePhotoDirId)
         {
             //Try get picasa file by google file name  
@@ -217,12 +392,12 @@ namespace GooglePhotoOrganizer
 
             //Match file by Data
             var matchedFiles = MediaKeyMatcher.MatchFilesWithTheSameName(localFiles[fileName], googleFilesSelect, picasaFilesSelect);
-            
-            
+
+
             foreach (var matched in matchedFiles)
             {
                 //No such files on google storage
-                if (matched.googleFiles.Count==0 && matched.picasaFiles.Count == 0)
+                if (matched.googleFiles.Count == 0 && matched.picasaFiles.Count == 0)
                     continue;
 
                 //No such file on local storage
@@ -240,7 +415,7 @@ namespace GooglePhotoOrganizer
                     foreach (var file in matched.localFiles)
                         localFilesSizes.Add(MediaKeyMatcher.GetFileSize(file.path));
 
-                    if (localFilesSizes.Count>1)
+                    if (localFilesSizes.Count > 1)
                     {
                         //Can't distinguish this files
                         LogText("Different local files with the same name. Skipping tham:");
@@ -259,7 +434,7 @@ namespace GooglePhotoOrganizer
                             var sel = preferableDirs[key];
                             localFile = null;
                             //Select pref dir
-                            if (sel!=null)
+                            if (sel != null)
                             {
                                 foreach (var fileDesc in matched.localFiles)
                                 {
@@ -277,7 +452,7 @@ namespace GooglePhotoOrganizer
                                 foreach (FileDesc file in matched.localFiles)
                                     LogText("   " + file.path);
                                 continue;
-                            }                            
+                            }
                         }
                         else
                         {
@@ -402,7 +577,7 @@ namespace GooglePhotoOrganizer
 
 
 
-        HashSet<string> videoExt = new HashSet<string>() { ".mp4", ".flv", ".mov", ".mpg", ".mod", ".avi"};
+
 
 
         public void Organize(List<TreeNode> rootNodes, string drivePhotoDirId, bool driveOrg = true, bool albumOrg = true, bool useDateTag = true)

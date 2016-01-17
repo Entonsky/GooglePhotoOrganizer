@@ -52,6 +52,7 @@
             this.button1 = new System.Windows.Forms.Button();
             this.buttonClear = new System.Windows.Forms.Button();
             this.buttonLogOut = new System.Windows.Forms.Button();
+            this.buttonFixVideoTime = new System.Windows.Forms.Button();
             this.contextMenuStripTree.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -147,7 +148,6 @@
             // 
             // buttonAddDirectory
             // 
-            this.buttonAddDirectory.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonAddDirectory.Location = new System.Drawing.Point(6, 7);
             this.buttonAddDirectory.Name = "buttonAddDirectory";
             this.buttonAddDirectory.Size = new System.Drawing.Size(75, 23);
@@ -200,7 +200,7 @@
             // buttonAbout
             // 
             this.buttonAbout.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.buttonAbout.Location = new System.Drawing.Point(87, 364);
+            this.buttonAbout.Location = new System.Drawing.Point(84, 364);
             this.buttonAbout.Name = "buttonAbout";
             this.buttonAbout.Size = new System.Drawing.Size(75, 23);
             this.buttonAbout.TabIndex = 12;
@@ -210,7 +210,7 @@
             // 
             // buttonTrashAll
             // 
-            this.buttonTrashAll.Location = new System.Drawing.Point(168, 389);
+            this.buttonTrashAll.Location = new System.Drawing.Point(210, 406);
             this.buttonTrashAll.Name = "buttonTrashAll";
             this.buttonTrashAll.Size = new System.Drawing.Size(75, 23);
             this.buttonTrashAll.TabIndex = 13;
@@ -222,7 +222,7 @@
             // buttonDeleteAllPicasa
             // 
             this.buttonDeleteAllPicasa.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.buttonDeleteAllPicasa.Location = new System.Drawing.Point(168, 360);
+            this.buttonDeleteAllPicasa.Location = new System.Drawing.Point(291, 406);
             this.buttonDeleteAllPicasa.Name = "buttonDeleteAllPicasa";
             this.buttonDeleteAllPicasa.Size = new System.Drawing.Size(75, 23);
             this.buttonDeleteAllPicasa.TabIndex = 14;
@@ -263,11 +263,24 @@
             this.buttonLogOut.UseVisualStyleBackColor = true;
             this.buttonLogOut.Click += new System.EventHandler(this.buttonLogOut_Click);
             // 
+            // buttonFixVideoTime
+            // 
+            this.buttonFixVideoTime.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.buttonFixVideoTime.Location = new System.Drawing.Point(99, 408);
+            this.buttonFixVideoTime.Name = "buttonFixVideoTime";
+            this.buttonFixVideoTime.Size = new System.Drawing.Size(84, 23);
+            this.buttonFixVideoTime.TabIndex = 18;
+            this.buttonFixVideoTime.Text = "FixVideoTime";
+            this.buttonFixVideoTime.UseVisualStyleBackColor = true;
+            this.buttonFixVideoTime.Visible = false;
+            this.buttonFixVideoTime.Click += new System.EventHandler(this.buttonFixVideoTime_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(470, 519);
+            this.Controls.Add(this.buttonFixVideoTime);
             this.Controls.Add(this.buttonLogOut);
             this.Controls.Add(this.buttonClear);
             this.Controls.Add(this.button1);
@@ -315,6 +328,7 @@
         private System.Windows.Forms.ToolStripMenuItem deleteFolderToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
         private System.Windows.Forms.Button buttonLogOut;
+        private System.Windows.Forms.Button buttonFixVideoTime;
     }
 }
 
