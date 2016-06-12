@@ -10,6 +10,7 @@ using Google.Apis.Drive.v2;
 using Google.Apis.Drive.v2.Data;
 using Google.Apis.Services;
 using Google.Apis.Util.Store;
+using System.Threading;
 
 //using Google.Apis.Plus.v1domains;
 
@@ -139,7 +140,10 @@ namespace GooglePhotoOrganizer
             {
                 // Adding each item  to the list.
                 foreach (var folder in folderFeed.Items)
-                    result.Add(folder);
+                {
+                    if (folder!=null)
+                        result.Add(folder);
+                }
                 
 
                 // We will know we are on the last page when the next page token is
@@ -161,16 +165,60 @@ namespace GooglePhotoOrganizer
             return result;
         }
 
-
-        public List<File> GetDirectories(string title = null, string parentId = null)
+        public List<File> GetDirectories(string title = null, string parentId = null, bool recursively = false)
         {
-            return GetFilesOrDirectories(false, title, parentId);
+            return GetDirectoriesIn(title, parentId, recursively, true);
+        }
+
+
+        private List<File> GetDirectoriesIn(string title, string parentId, bool recursively, bool firstLevel)
+        {
+            var result = new List<File>();
+            var dirs = GetFilesOrDirectories(false, title, parentId);
+            result.AddRange(dirs);
+
+            if (recursively)
+            {
+                if (firstLevel)
+                {
+                    var opt = new ParallelOptions() { MaxDegreeOfParallelism = 1 };
+                    Parallel.ForEach(dirs, opt, (dir) => 
+                    {
+                        for (int i = 0; i < 5; i++)
+                        {
+                            result.AddRange(GetDirectoriesIn(title, dir.Id, true, false));                        
+                        }
+                    });
+                }
+                else
+                {
+                    //Thread.Sleep(10);
+                    foreach (var dir in dirs)
+                    {
+                        for (int i = 0; i < 5; i++)
+                        {
+                            try
+                            {
+                                result.AddRange(GetDirectoriesIn(title, dir.Id, true, false));
+                            }
+                            catch (Exception ex)
+                            {
+                                Thread.Sleep(1000);
+                                if (i == 4)
+                                    throw ex;
+                            }
+                        }
+                    }
+                }
+            }
+            return result;
         }
 
         public List<File> GetFiles(string title = null, string parentId = null)
         {
             return GetFilesOrDirectories(true, title, parentId);
         }
+        
 
         public bool DirectoryExists(string title = null, string parentId = null)
         {

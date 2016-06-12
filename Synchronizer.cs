@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -155,6 +156,7 @@ namespace GooglePhotoOrganizer
         Dictionary<string, string> googleDirs = null;
 
         Dictionary<string, List<PicasaEntry>> picasaFiles = null;
+        HashSet<string> picasaSearchedNames = new HashSet<string>();
         HashSet<string> picasaFilesId = new HashSet<string>();
         Dictionary<string, AlbumAccessor> picasaAlbumsByName = null;
         Dictionary<string, Tuple<string, string>> preferableDirs = new Dictionary<string, Tuple<string, string>>();
@@ -325,6 +327,7 @@ namespace GooglePhotoOrganizer
                                     //Sometimes picassa and all already found files creditals coul be expired
                                     //Will delete them all and reinit as usual.
                                     picasaFiles.Clear();
+                                    picasaSearchedNames.Clear();
                                     picasaFilesId.Clear();
                                 }
                             }
@@ -343,38 +346,63 @@ namespace GooglePhotoOrganizer
         }
 
 
+        void SearchForPicasaFile(string fileName)
+        {
+            //Add different type of names for search
+            var searchTry = new HashSet<string>();
+            searchTry.Add(fileName);
+            searchTry.UnionWith(fileName.Split(new string[] { "."}, StringSplitOptions.RemoveEmptyEntries));
+            searchTry.UnionWith(fileName.Split(new string[] { "_" }, StringSplitOptions.RemoveEmptyEntries));
+            searchTry.UnionWith(fileName.Split(new string[] { "-" }, StringSplitOptions.RemoveEmptyEntries));
+            searchTry.UnionWith(fileName.Split(new string[] { "_", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "-" }, StringSplitOptions.RemoveEmptyEntries));
+
+            foreach (var tr in searchTry)
+            {
+                if (picasaFiles.ContainsKey(fileName))
+                    break; //Already found
+
+                if (picasaSearchedNames.Contains(tr))
+                    continue;
+                picasaSearchedNames.Add(tr);
+                
+                var foundAlbums = new HashSet<string>();
+                var picasaFoundFiles = picasa.GetPhotos(null, tr);
+                foreach (var file in picasaFoundFiles)
+                {
+                    AddPicasaFile(file, picasaFiles, picasaFilesId);
+                    var picasaFoto = new PhotoAccessor(file);
+                    foundAlbums.Add(picasaFoto.AlbumId);
+                }
+                //Also try to add any files from album of found files
+                foreach (var albumId in foundAlbums)
+                    AddPicasaFiles(picasa, picasaFiles, picasaFilesId, albumId);
+            }
+        }
+
+
 
         private void MoveFile(string fileName, string drivePhotoDirId)
         {
+            if (!localFiles.ContainsKey(fileName))
+                return;
+
             //Try get picasa file by google file name  
             if (googleFiles.ContainsKey(fileName))
             {
-                foreach (var googleFile in googleFiles[fileName])
+                lock (picasaFiles)
                 {
-                    //Add by 
-                    var googleFileName = ((File)googleFile).OriginalFilename;
-                    lock (picasaFiles)
+                    if (!picasaFiles.ContainsKey(fileName))
                     {
-                        if (!picasaFiles.ContainsKey(googleFileName))
-                        {
-                            var foundAlbums = new HashSet<string>();
-                            var picasaFoundFiles = picasa.GetPhotos(null, googleFileName);
-                            foreach (var file in picasaFoundFiles)
-                            {
-                                AddPicasaFile(file, picasaFiles, picasaFilesId);
-                                var picasaFoto = new PhotoAccessor(file);
-                                foundAlbums.Add(picasaFoto.AlbumId);
-                            }
-                            //Also try to add any files from album of found files
-                            foreach (var albumId in foundAlbums)
-                                AddPicasaFiles(picasa, picasaFiles, picasaFilesId, albumId);
-                        }
+                        SearchForPicasaFile(fileName);
                     }
-                }
+                }                
             }
-
-            if (!localFiles.ContainsKey(fileName))
+            
+            if (!picasaFiles.ContainsKey(fileName))
+            {
+                LogText("File not found in picasa album " + fileName);
                 return;
+            }
 
             List<File> googleFilesSelect;
             if (googleFiles.ContainsKey(fileName))
@@ -418,7 +446,7 @@ namespace GooglePhotoOrganizer
                     if (localFilesSizes.Count > 1)
                     {
                         //Can't distinguish this files
-                        LogText("Different local files with the same name. Skipping tham:");
+                        LogText("Different local files with the same name. Skipping them:");
                         foreach (FileDesc file in matched.localFiles)
                             LogText("   " + file.path);
                         continue;
@@ -494,37 +522,7 @@ namespace GooglePhotoOrganizer
                     localFile = matched.localFiles[0];
                 }
                 //*****************************************
-
-
-                //Move files to picasa album
-                if (matched.picasaFiles.Count > 0)
-                {
-                    AlbumAccessor picasaAlbum;
-                    lock (picasaAlbumsByName)
-                    {
-                        if (picasaAlbumsByName.ContainsKey(localFile.album))
-                            picasaAlbum = picasaAlbumsByName[localFile.album];
-                        else
-                        {
-                            picasaAlbum = picasa.CreateAlbum(localFile.album, localFile.relPath);
-                            picasaAlbumsByName.Add(localFile.album, picasaAlbum);
-                        }
-                    }
-
-                    if (matched.picasaFiles.Count > 1)
-                    {
-                        var photo = new PhotoAccessor(matched.picasaFiles[0]);
-                        LogText("Has " + matched.picasaFiles.Count + " dublicates with name '" + photo.PhotoTitle + "' among the Google Photo files. All of them will move to album '" + localFile.album + "'");
-                    }
-
-                    foreach (PicasaEntry picasaFile in matched.picasaFiles)
-                    {
-                        var photo = new PhotoAccessor(picasaFile);
-                        if (photo.AlbumId != picasaAlbum.Id) //Not in that album yet
-                            picasa.MovePhotoToAlbum(picasaFile, picasaAlbum.Id);
-                    }
-                }
-
+                
                 //Move files to google dirs
                 if (matched.googleFiles.Count != 0)
                 {
@@ -572,6 +570,35 @@ namespace GooglePhotoOrganizer
 
                     }
                 }
+                
+                //Move files to picasa album
+                if (matched.picasaFiles.Count > 0)
+                {
+                    AlbumAccessor picasaAlbum;
+                    lock (picasaAlbumsByName)
+                    {
+                        if (picasaAlbumsByName.ContainsKey(localFile.album))
+                            picasaAlbum = picasaAlbumsByName[localFile.album];
+                        else
+                        {
+                            picasaAlbum = picasa.CreateAlbum(localFile.album, localFile.relPath);
+                            picasaAlbumsByName.Add(localFile.album, picasaAlbum);
+                        }
+                    }
+
+                    if (matched.picasaFiles.Count > 1)
+                    {
+                        var photo = new PhotoAccessor(matched.picasaFiles[0]);
+                        LogText("Has " + matched.picasaFiles.Count + " dublicates with name '" + photo.PhotoTitle + "' among the Google Photo files. All of them will move to album '" + localFile.album + "'");
+                    }
+
+                    foreach (PicasaEntry picasaFile in matched.picasaFiles)
+                    {
+                        var photo = new PhotoAccessor(picasaFile);
+                        if (photo.AlbumId != picasaAlbum.Id) //Not in that album yet
+                            picasa.MovePhotoToAlbum(picasaFile, picasaAlbum.Id);
+                    }
+                }
             }
         }
 
@@ -580,7 +607,7 @@ namespace GooglePhotoOrganizer
 
 
 
-        public void Organize(List<TreeNode> rootNodes, string drivePhotoDirId, bool driveOrg = true, bool albumOrg = true, bool useDateTag = true)
+        public void Organize(List<TreeNode> rootNodes, string drivePhotoDirId, bool driveOrg = true, bool albumOrg = true, bool reorganizeSubfolders = true)
         {
             LogText("Search for files on local drive");
             localFiles = GetFilesFromNodes(rootNodes);
@@ -598,9 +625,45 @@ namespace GooglePhotoOrganizer
                 picasa = new PicasaClient();
 
             var filesForMoving = new HashSet<string>();
+            picasaFiles = new Dictionary<string, List<PicasaEntry>>();
+            picasaSearchedNames = new HashSet<string>();
+            picasaFilesId = new HashSet<string>();
+            googleDirs = new Dictionary<string, string>();
+            preferableDirs = new Dictionary<string, Tuple<string, string>>();
+
+
             
+            List<File> googleFilesLst = new List<File>();
+            if (reorganizeSubfolders)
+            {
+                LogText("Search for all subfolders in Google Photo folder. It can take a long time...");
+                //Search for subfolders 
+                var folders = drive.GetDirectories(null, drivePhotoDirId, true);
+                LogText("Search for files in "+folders.Count+" subfolders. It can take a long time...");
+                ResetProgress(folders.Count);
+                var opt1 = new ParallelOptions() { MaxDegreeOfParallelism = 5 };
+                Parallel.ForEach(folders, opt1, (folder) =>
+                {
+                    for (int i = 0; i < 5; i++)
+                    {
+                        try
+                        {
+                            googleFilesLst.AddRange(drive.GetFiles(null, folder.Id));
+                        }
+                        catch (Exception ex)
+                        {
+                            Thread.Sleep(1000);
+                            if (i == 4)
+                                throw ex;
+                        }
+                    }
+                    IncreaseProgress();
+                });
+                ResetProgress(100);
+            }
             LogText("Search for files already in Google Photos directory on Google Drive. It can take a long time...");
-            var googleFilesLst = drive.GetFiles(null, drivePhotoDirId);
+            googleFilesLst.AddRange(drive.GetFiles(null, drivePhotoDirId));
+
             googleFiles = new Dictionary<string, List<File>>();
             foreach (var file in googleFilesLst)
             {
@@ -633,10 +696,7 @@ namespace GooglePhotoOrganizer
             LogText("Found " + picasaAlbumsLst.Count + " albums");
 
             
-            picasaFiles = new Dictionary<string, List<PicasaEntry>>();
-            picasaFilesId = new HashSet<string>();
-            googleDirs = new Dictionary<string, string>();
-            preferableDirs = new Dictionary<string, Tuple<string, string>>();
+            
 
 
             /*
@@ -698,16 +758,18 @@ namespace GooglePhotoOrganizer
                         if (i < 2)
                         {
                             LogText("Error moving " + googleFilePair + ". Try again...");
-                            if (i==1)
+                            /*
                             {
+                            //if (i==0)
                                 lock (picasaFiles)
                                 {
                                     //Sometimes picassa and all already found files creditals coul be expired
                                     //Will delete them all and reinit as usual.
                                     picasaFiles.Clear();
+                                    picasaSearchedNames.Clear();
                                     picasaFilesId.Clear();
                                 }
-                            }
+                            }*/
                         }
                         else
                         {

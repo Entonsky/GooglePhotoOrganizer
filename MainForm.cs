@@ -43,7 +43,7 @@ namespace GooglePhotoOrganizer
         }
 
 
-        private bool RunAction(ThreadStart act)
+        private bool RunAction(ThreadStart act, bool waitForResult = true)
         {
             labelTimer.Text = "0 sec";
             DateTime start = DateTime.Now;
@@ -52,11 +52,17 @@ namespace GooglePhotoOrganizer
             active = true;
             Exception lastEx = null;
 
+            bool isAborted = false;
+
             var th = new Thread(() =>
             {
                 try
                 {
                     act();
+                }
+                catch (ThreadAbortException ex1)
+                {
+                    isAborted = true;
                 }
                 catch (Exception ex)
                 {
@@ -64,32 +70,73 @@ namespace GooglePhotoOrganizer
                 }
             });
             th.Start();
-            while (!th.Join(100))
+
+
+            var thMonitor = new Thread(() =>
             {
-                labelTimer.Text = Math.Round(DateTime.Now.Subtract(start).TotalSeconds) + " sec";
-                Application.DoEvents();
-                if (!active)
-                    break;
-            }
+                while (!th.Join(100))
+                {
+                    Action action = delegate () { labelTimer.Text = Math.Round(DateTime.Now.Subtract(start).TotalSeconds) + " sec"; };
+                    labelTimer.Invoke(action);
+                    if (!active && !isAborted)
+                    {
+                        isAborted = true;
+                        th.Abort();
+                        break;
+                    }
+                }
 
-            progressBar.Value = 0;
+                progressBar.Invoke((Action)(delegate () { progressBar.Value = 0; SetEnabled(true); }));
 
-            if (lastEx != null)
+                if (!waitForResult)
+                {
+                    active = false;
+                    if (lastEx != null)
+                    {
+                        //Show error if not wait for result
+                        Action action = delegate ()
+                        {
+                            richTextBoxLog.AppendText("Error. Check for internet connection. If problem still exists with internet connection, send question to author.\r\n" + lastEx.ToString());
+                            richTextBoxLog.ScrollToCaret();
+                        };
+                        richTextBoxLog.Invoke(action);
+                    }
+
+                    if (isAborted)
+                    {
+                        //Show error if not wait for result
+                        Action action = delegate ()
+                        {
+                            richTextBoxLog.AppendText("Execution canceled");
+                            richTextBoxLog.ScrollToCaret();
+                        };
+                        richTextBoxLog.Invoke(action);
+                    }
+                }
+            });
+            thMonitor.Start();
+
+            if (waitForResult)
             {
-                SetEnabled(true);
-                throw lastEx;
-            }
+                while (!thMonitor.Join(10))
+                {
+                    Thread.Sleep(10);
+                    Application.DoEvents();
+                }
 
+                if (lastEx != null)
+                    throw lastEx;
 
-            if (!active)
-                th.Abort();
-
-
-            SetEnabled(true);
-            if (active)
-            {
-                active = false;
-                return true;
+                if (active && !isAborted)
+                {
+                    active = false;
+                    return true;
+                }
+                else
+                {
+                    active = false;
+                    return false;
+                }
             }
             else
                 return false;
@@ -189,8 +236,8 @@ namespace GooglePhotoOrganizer
                 foreach (TreeNode node in treeViewDirectories.Nodes)
                     rootNodes.Add(node);
 
-                if (!RunAction(() => { syncronizer.Organize(rootNodes, drivePhotoDirId, diskOrg, albumnOrg); }))
-                    return;
+                RunAction(() => { syncronizer.Organize(rootNodes, drivePhotoDirId, diskOrg, albumnOrg, checkBoxRecheckSubfolders.Checked); }, false);
+                
             }
             catch (Exception ex)
             {
@@ -367,6 +414,12 @@ namespace GooglePhotoOrganizer
             var alreadyFoundExt = new HashSet<string>();
 
             //picasa.Test();
+
+
+            var x = picasa.GetPhotos(null, "P1150295.JPG");
+            var y = picasa.GetPhotos(null, "P11");
+            var z = picasa.GetPhotos(null, "P1150295");
+            var z1 = picasa.GetPhotos(null, "P");
 
             var foundAlbums = new HashSet<string>();
             var picasaFoundFiles = picasa.GetPhotos(null, ".avi");

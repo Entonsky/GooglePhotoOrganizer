@@ -222,11 +222,14 @@ namespace GooglePhotoOrganizer
             ac.AlbumId = newAlbumId;
             try
             {
+                photo.Service = GetPicasaService(false);
                 PicasaEntry updatedEntry = (PicasaEntry)photo.Update();
             }
+
             catch
             {
                 var service = GetPicasaService(true);
+                var x = GetPhotos(ac.AlbumId); //Temp query - need to restart service
                 photo.Service = service;
                 PicasaEntry updatedEntry = (PicasaEntry)photo.Update();
             }

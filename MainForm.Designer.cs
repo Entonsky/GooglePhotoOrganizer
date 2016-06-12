@@ -53,6 +53,7 @@
             this.buttonClear = new System.Windows.Forms.Button();
             this.buttonLogOut = new System.Windows.Forms.Button();
             this.buttonFixVideoTime = new System.Windows.Forms.Button();
+            this.checkBoxRecheckSubfolders = new System.Windows.Forms.CheckBox();
             this.contextMenuStripTree.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -168,7 +169,7 @@
             // buttonOrganize
             // 
             this.buttonOrganize.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.buttonOrganize.Location = new System.Drawing.Point(6, 364);
+            this.buttonOrganize.Location = new System.Drawing.Point(95, 364);
             this.buttonOrganize.Name = "buttonOrganize";
             this.buttonOrganize.Size = new System.Drawing.Size(75, 23);
             this.buttonOrganize.TabIndex = 9;
@@ -200,7 +201,7 @@
             // buttonAbout
             // 
             this.buttonAbout.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.buttonAbout.Location = new System.Drawing.Point(84, 364);
+            this.buttonAbout.Location = new System.Drawing.Point(173, 364);
             this.buttonAbout.Name = "buttonAbout";
             this.buttonAbout.Size = new System.Drawing.Size(75, 23);
             this.buttonAbout.TabIndex = 12;
@@ -233,7 +234,7 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(291, 365);
+            this.button1.Location = new System.Drawing.Point(281, 435);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(75, 23);
             this.button1.TabIndex = 15;
@@ -275,11 +276,23 @@
             this.buttonFixVideoTime.Visible = false;
             this.buttonFixVideoTime.Click += new System.EventHandler(this.buttonFixVideoTime_Click);
             // 
+            // checkBoxRecheckSubfolders
+            // 
+            this.checkBoxRecheckSubfolders.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.checkBoxRecheckSubfolders.AutoSize = true;
+            this.checkBoxRecheckSubfolders.Location = new System.Drawing.Point(6, 367);
+            this.checkBoxRecheckSubfolders.Name = "checkBoxRecheckSubfolders";
+            this.checkBoxRecheckSubfolders.Size = new System.Drawing.Size(80, 17);
+            this.checkBoxRecheckSubfolders.TabIndex = 19;
+            this.checkBoxRecheckSubfolders.Text = "Reorganize";
+            this.checkBoxRecheckSubfolders.UseVisualStyleBackColor = true;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(470, 519);
+            this.Controls.Add(this.checkBoxRecheckSubfolders);
             this.Controls.Add(this.buttonFixVideoTime);
             this.Controls.Add(this.buttonLogOut);
             this.Controls.Add(this.buttonClear);
@@ -329,6 +342,7 @@
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
         private System.Windows.Forms.Button buttonLogOut;
         private System.Windows.Forms.Button buttonFixVideoTime;
+        private System.Windows.Forms.CheckBox checkBoxRecheckSubfolders;
     }
 }
 
